@@ -1,0 +1,68 @@
+{% load static %}
+
+<header class="site-header">
+  <div class="wrap wrap--header">
+    <a href="/" class="logo" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+      <img
+        src="{% static 'checker/logo.png' %}"
+        alt="RättaText"
+        style="height:54px; width:auto; display:block;"
+      >
+    </a>
+
+    <div class="header-actions">
+      {% if user.is_authenticated %}
+        <a href="" class="header-link">Inställningar</a>
+
+        <form method="post" action="{% url 'logout' %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="header-link header-link--button">Logga ut</button>
+        </form>
+      {% else %}
+        <button type="button" class="header-link header-link--button" onclick="window.openAuthModal?.()">
+          Logga in
+        </button>
+        <button type="button" class="header-link header-link--button" onclick="window.openRegisterModal?.()">
+          Skapa konto
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <hr style="border:0;border-top:1px solid var(--border); margin:0;">
+</header>
+
+<style>
+  .site-header .wrap--header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between; /* logo left, buttons right */
+    gap:16px;
+  }
+
+  .header-actions{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+
+  .header-link{
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    padding: 6px 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .header-link:hover{
+    text-decoration: underline;
+  }
+
+  .header-link--button{
+    appearance:none;
+    -webkit-appearance:none;
+  }
+</style>

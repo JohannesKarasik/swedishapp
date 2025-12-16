@@ -1,0 +1,289 @@
+:root{
+    --accent:#057e70;
+    --bg:#f6f8fa;
+    --text:#111827;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --shadow: 0 6px 24px rgba(17,24,39,.06), 0 2px 6px rgba(17,24,39,.04);
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    color:var(--text);
+    background:var(--bg);
+  }
+
+  /* Layout */
+  .wrap{
+    max-width:1100px;
+    margin-inline:auto;
+    padding:32px;
+  }
+
+  .site-header .wrap--header{
+    max-width:none;      /* stop centering container */
+    margin:0;            /* remove auto centering */
+    padding:20px 20px;      /* keep your vertical spacing */
+  }
+  
+  header{margin:8px 0 20px}
+  h1{
+    font-size:clamp(1.35rem,2.5vw,1.75rem);
+    margin:0;
+    font-weight:700;
+    letter-spacing:.2px;
+    color:var(--text);
+  }
+  .sub{
+    color:var(--muted);
+    margin-top:6px;
+    font-size:.975rem;
+  }
+
+  /* Card */
+  .card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .card__body{padding:18px}
+  .row{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+
+  /* Form */
+  label{font-weight:600; display:block; margin-bottom:8px}
+
+  .meta{
+    display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    color:var(--muted); font-size:.92rem; margin-top:10px;
+  }
+  .counter{
+    margin-left:auto; display:flex; gap:14px; align-items:center;
+  }
+
+  /* Actions */
+  .actions{display:flex; gap:10px; margin-top:14px}
+  .btn{
+    appearance:none; border:1px solid transparent; border-radius:10px; padding:10px 14px;
+    font-weight:600; cursor:pointer; transition:background-color .15s, box-shadow .15s, border-color .15s, transform .02s;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn--primary{
+    background:var(--accent); color:#fff;
+
+  }
+  .btn--primary:hover{filter:brightness(0.98)}
+  .btn--primary:disabled{opacity:.75; cursor:not-allowed}
+  .btn--ghost{
+    background:#fff; color:var(--text); border-color:var(--border);
+  }
+  .btn--ghost:hover{border-color:color-mix(in oklab, var(--accent), #000 10%)}
+
+  /* Loading spinner in button */
+  .btn .spinner{
+    display:none; inline-size:16px; block-size:16px; border:2px solid #fff; border-right-color:transparent; border-radius:50%;
+    margin-right:8px; vertical-align:-3px; animation:spin .7s linear infinite;
+  }
+  .btn.is-loading .spinner{display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Corrected output */
+  .output{
+    margin-top:18px; border-top:1px solid var(--border);
+    background:linear-gradient(#fff, #fff) padding-box;
+  }
+  .output__head{
+    padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .output__title{margin:0; font-size:1rem}
+  .toolbar{display:flex; gap:8px}
+  pre{
+    margin:0; padding:18px; overflow:auto; white-space:pre-wrap; word-wrap:break-word;
+    font:inherit; background:#fff;
+  }
+
+  /* Helper tags */
+  .tag{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--muted); font-size:.85rem;
+  }
+  .dot{
+    inline-size:8px; block-size:8px; border-radius:50%; background:var(--accent); display:inline-block;
+  }
+
+  /* Small screens */
+  @media (max-width:600px){
+    .counter{width:100%; justify-content:flex-start; margin-left:0}
+    .card__body{padding:14px}
+  }
+
+
+  /* Center only the intro heading + subtitle */
+.card > .card__body header{
+  text-align: center;
+}
+
+/* Force placeholder to use real text font (not system-ui fallback) */
+
+
+
+#text-editor {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  min-height: 380px;
+  font-size: 16px;
+  line-height: 1.55;
+  outline: none;
+  white-space: pre-wrap;
+}
+
+#text-editor:empty::before {
+  content: attr(placeholder);
+  color: #9ca3af;
+}
+
+
+
+.editor .error {
+  position: relative;
+  cursor: pointer;
+  background-color: rgba(239, 68, 68, 0.15);
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+  text-underline-offset: 3px;
+}
+
+/* Tooltip */
+.editor .error .tooltip {
+  position: absolute;
+  bottom: 125%;
+  left: 0;
+  background: #111827;
+  color: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  display: none;
+  z-index: 20;
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+}
+
+.editor .error:hover .tooltip {
+  display: block;
+}
+
+.tooltip .suggestion {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.tooltip .actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tooltip button {
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tooltip .apply {
+  background: #22c55e;
+  color: #062e14;
+}
+
+.tooltip .dismiss {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+/* Floating tooltip portal (outside editor flow) */
+.tooltip-portal{
+  position:absolute;
+  background:#111827;
+  color:#fff;
+  padding:8px;
+  border-radius:8px;
+  font-size:13px;
+  white-space:nowrap;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  display:none;
+  z-index:9999;
+}
+
+.tooltip-portal.visible{
+  display:block;
+}
+
+.tooltip-portal .suggestion{
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+.tooltip-portal .actions{
+  display:flex;
+  gap:6px;
+}
+
+.tooltip-portal button{
+  border:none;
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.tooltip-portal .apply{
+  background:#22c55e;
+  color:#062e14;
+}
+
+.tooltip-portal .dismiss{
+  background:#374151;
+  color:#e5e7eb;
+}
+
+
+
+
+
+.btn.is-disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* Text length error state */
+.editor.is-too-long {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+/* Error message below editor */
+.length-error {
+  margin-top: 8px;
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+#text-editor.is-too-long {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+}
+
+.length-error {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #dc2626;
+}

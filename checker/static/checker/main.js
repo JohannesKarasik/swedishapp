@@ -146,11 +146,12 @@
     const rect = error.getBoundingClientRect();
 
     tooltip.innerHTML = `
-    <div class="suggestion">${error.dataset.suggestion}</div>
+    <div class="suggestion" style="new">${error.dataset.suggestion}</div>
     <div class="actions">
       <button class="apply">Tillämpa</button>
       <button class="dismiss">Avvisa</button>
     </div>
+    <style>.margin-bottom:{ 100px !important}</style>
   `;
   
   tooltip.classList.add("visible");

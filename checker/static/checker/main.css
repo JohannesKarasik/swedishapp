@@ -218,3 +218,8 @@
 }
 
 .tooltip-portal.visible{ display:block; }
+
+
+.card {
+  overflow: visible;
+}

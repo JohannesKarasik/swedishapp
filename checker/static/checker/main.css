@@ -189,8 +189,17 @@
 
 .editor .error {
   display: inline-block;
-  line-height: 1.55;   /* MUST match editor line-height */
+  line-height: 1.55; /* must match editor */
+  cursor: pointer;
+
+  background-color: rgba(239, 68, 68, 0.18);
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+  text-underline-offset: 3px;
+  border-radius: 3px;
+  padding: 0 1px;
 }
+
 
 
 

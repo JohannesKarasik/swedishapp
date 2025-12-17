@@ -36,17 +36,7 @@ def correct_with_openai_sv(text: str) -> str:
 
 
 def index(request):
-    # ❌ Block anonymous users
-    if not request.user.is_authenticated:
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse(
-                {"error": "login_required"},
-                status=401
-            )
-
-        return render(request, "checker/index.html")
-
-    # ✅ Logged-in users only from here
+    # Handle AJAX correction (allow anonymous users)
     if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
         text = (request.POST.get("text") or "").strip()
 
@@ -63,6 +53,7 @@ def index(request):
             "corrected_text": corrected,
         })
 
+    # Normal page render (GET)
     return render(request, "checker/index.html")
 
 

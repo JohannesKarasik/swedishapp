@@ -185,3 +185,15 @@
   font-size: 14px;
   color: #dc2626;
 }
+
+
+.editor .error {
+  display: inline-block;
+  line-height: 1.55;   /* MUST match editor line-height */
+}
+
+
+.tooltip-portal {
+  pointer-events: auto;
+  margin-bottom: 6px;
+}

@@ -197,3 +197,8 @@
   pointer-events: auto;
   margin-bottom: 36px;
 }
+
+
+.tooltip-portal {
+  position: fixed;
+}

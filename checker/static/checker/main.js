@@ -122,8 +122,21 @@
 
     for (const d of diffs) {
       html += htmlWithNewlines(text.slice(last, d.start));
-      html += `<span class="error" data-original="${escapeHTML(d.original)}" data-suggestion="${escapeHTML(d.suggestion)}">${escapeHTML(d.original)}</span>`;
-      last = d.end;
+      html += `<span
+      class="error"
+      data-original="${escapeHTML(d.original)}"
+      data-suggestion="${escapeHTML(d.suggestion)}"
+      style="
+        background: linear-gradient(to bottom, transparent 60%, rgba(239,68,68,.28) 60%);
+        text-decoration: underline;
+        text-decoration-color: #ef4444;
+        text-underline-offset: 3px;
+        cursor: pointer;
+        border-radius: 3px;
+        padding: 0 1px;
+      "
+    >${escapeHTML(d.original)}</span>`;
+          last = d.end;
     }
 
     html += htmlWithNewlines(text.slice(last));

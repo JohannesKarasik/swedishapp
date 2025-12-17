@@ -140,64 +140,52 @@
   editor.addEventListener("click", (e) => {
     const error = e.target.closest(".error");
     if (!error) return;
-
+  
     activeError = error;
-
-    const rect = error.getBoundingClientRect();
-
+  
+    // 1️⃣ Inject tooltip content
     tooltip.innerHTML = `
-    <div class="suggestion">${error.dataset.suggestion}</div>
-    <div class="actions">
-      <button class="apply">Tillämpa</button>
-      <button class="dismiss">Avvisa</button>
-    </div>
-  `;
+      <div class="suggestion">${error.dataset.suggestion}</div>
+      <div class="actions">
+        <button class="apply">Tillämpa</button>
+        <button class="dismiss">Avvisa</button>
+      </div>
+    `;
   
-  tooltip.classList.add("visible");
-
-  requestAnimationFrame(() => {
-    const tooltipRect = tooltip.getBoundingClientRect();
+    // 2️⃣ Force render (hidden) so dimensions are REAL
+    tooltip.style.visibility = "hidden";
+    tooltip.style.display = "block";
+    tooltip.style.left = "0px";
+    tooltip.style.top = "0px";
+    tooltip.style.transform = "none";
+  
+    // 3️⃣ Measure
+    const wordRect = error.getBoundingClientRect();
+    const tipRect  = tooltip.getBoundingClientRect();
+  
     const GAP = 12;
+    const PADDING = 8;
   
-    const top = rect.top - tooltipRect.height - GAP;
-    const left = rect.left + rect.width / 2;
+    // 4️⃣ Position ABOVE word (fallback BELOW if needed)
+    let top = wordRect.top - tipRect.height - GAP;
+    if (top < PADDING) {
+      top = wordRect.bottom + GAP;
+    }
   
+    // 5️⃣ Center horizontally + clamp to viewport
+    let left = wordRect.left + wordRect.width / 2;
+    const minLeft = PADDING + tipRect.width / 2;
+    const maxLeft = window.innerWidth - PADDING - tipRect.width / 2;
+    left = Math.max(minLeft, Math.min(maxLeft, left));
+  
+    // 6️⃣ Apply final position & show
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
     tooltip.style.transform = "translateX(-50%)";
-  });
-  
-  
-  
+    tooltip.style.visibility = "visible";
     tooltip.classList.add("visible");
   });
-
-  tooltip.addEventListener("click", (e) => {
-    if (!activeError) return;
-
-    if (e.target.classList.contains("apply")) {
-      activeError.outerHTML = escapeHTML(activeError.dataset.suggestion);
-    }
-
-    if (e.target.classList.contains("dismiss")) {
-      activeError.outerHTML = escapeHTML(activeError.dataset.original);
-    }
-
-    tooltip.classList.remove("visible");
-    activeError = null;
-
-    lastPlainText = getPlainText();
-    sessionStorage.setItem("tc_text", lastPlainText);
-    updateCounts(lastPlainText);
-  });
-
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".error") && !e.target.closest(".tooltip-portal")) {
-      tooltip.classList.remove("visible");
-      activeError = null;
-    }
-  });
-
+  
   /* -------------------------------
      INIT
   /* -------------------------------

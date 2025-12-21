@@ -1,25 +1,35 @@
-# checker/views.py
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from openai import OpenAI
 import logging
-import re   # ✅ ADDED
+import re
+import difflib
+import unicodedata
 
 client = OpenAI()
 logger = logging.getLogger(__name__)
 
 
+
 def correct_with_openai_sv(text: str) -> str:
     try:
-        # ✅ COLLAPSE WHITESPACE (self-defensive, same as Finnish)
+        # 🔹 Collapse all whitespace FIRST
         text = re.sub(r"\s+", " ", text).strip()
 
         system_prompt = (
-            "Du är en professionell svensk språkre­daktör. "
-            "Din uppgift är att korrigera ALLA fel i stavning, grammatik, "
-            "ordföljd och skiljetecken (särskilt kommatecken). "
-            "Behåll betydelsen exakt. "
-            "Returnera ENDAST den korrigerade texten."
+            "Du är en professionell svensk språkkorrekturläsare.\n\n"
+            "VIKTIGA REGLER (OBLIGATORISKT):\n"
+            "- LÄGG INTE TILL nya ord\n"
+            "- TA INTE BORT ord\n"
+            "- ÄNDRA INTE ordens ordning\n"
+            "- DELA INTE upp eller slå ihop ord\n"
+            "- ÄNDRA INTE mellanslag eller radbrytningar\n\n"
+            "Du FÅR ENDAST:\n"
+            "- korrigera stavfel INUTI befintliga ord\n"
+            "- lägga till eller ta bort skiljetecken SOM ÄR DEL AV ORDET "
+            "(t.ex. 'att' → 'att,')\n\n"
+            "Om en ändring kräver omformulering, LÄMNA DEN OÄNDRAD.\n\n"
+            "Returnera ENDAST texten, utan förklaringar."
         )
 
         resp = client.chat.completions.create(
@@ -32,15 +42,74 @@ def correct_with_openai_sv(text: str) -> str:
         )
 
         corrected = (resp.choices[0].message.content or "").strip()
+
+        # 🔐 Absolute safety: word count must match
+        if len(corrected.split()) != len(text.split()):
+            logger.warning("Word count mismatch – falling back to original")
+            return text
+
         return corrected if corrected else text
 
     except Exception:
         logger.exception("OpenAI error")
         return text
+    
+
+def find_differences_charwise(original: str, corrected: str):
+    diffs_out = []
+
+    orig_text = unicodedata.normalize("NFC", original)
+    corr_text = unicodedata.normalize("NFC", corrected)
+
+    token_pattern = r"\w+[.,;:!?]?"
+
+    orig_tokens = re.findall(token_pattern, orig_text, re.UNICODE)
+    corr_tokens = re.findall(token_pattern, corr_text, re.UNICODE)
+
+    # ❌ Abort if tokens don't line up
+    if len(orig_tokens) != len(corr_tokens):
+        return []
+
+    # Map token → char positions
+    orig_positions = []
+    cursor = 0
+    for tok in orig_tokens:
+        start = orig_text.find(tok, cursor)
+        end = start + len(tok)
+        orig_positions.append((start, end))
+        cursor = end
+
+    def is_small_edit(a: str, b: str) -> bool:
+        a_core = a.lower().strip(".,;:!?")
+        b_core = b.lower().strip(".,;:!?")
+
+        if a_core == b_core:
+            return True
+
+        ratio = difflib.SequenceMatcher(a=a_core, b=b_core).ratio()
+        return ratio >= 0.8
+
+    for i, (orig_tok, corr_tok) in enumerate(zip(orig_tokens, corr_tokens)):
+        if orig_tok == corr_tok:
+            continue
+
+        if not is_small_edit(orig_tok, corr_tok):
+            continue
+
+        start, end = orig_positions[i]
+
+        diffs_out.append({
+            "type": "replace",
+            "start": start,
+            "end": end,
+            "original": orig_tok,
+            "suggestion": corr_tok,
+        })
+
+    return diffs_out
 
 
 def index(request):
-    # Handle AJAX correction (allow anonymous users)
     if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
         raw_text = (request.POST.get("text") or "").strip()
 
@@ -48,19 +117,23 @@ def index(request):
             return JsonResponse({
                 "original_text": "",
                 "corrected_text": "",
+                "differences": [],
+                "error_count": 0,
             })
 
-        # ✅ COLLAPSE ONCE, EARLY, AND USE EVERYWHERE
+        # ✅ COLLAPSE ONCE, EARLY
         collapsed_text = re.sub(r"\s+", " ", raw_text).strip()
 
         corrected = correct_with_openai_sv(collapsed_text)
+        differences = find_differences_charwise(collapsed_text, corrected)
 
         return JsonResponse({
-            "original_text": collapsed_text,   # ✅ collapsed
+            "original_text": collapsed_text,
             "corrected_text": corrected,
+            "differences": differences,
+            "error_count": len(differences),
         })
 
-    # Normal page render (GET)
     return render(request, "checker/index.html")
 
 

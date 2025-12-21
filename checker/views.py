@@ -1,8 +1,9 @@
 # checker/views.py
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from openai import OpenAI
 import logging
+import re   # ✅ ADDED
 
 client = OpenAI()
 logger = logging.getLogger(__name__)
@@ -10,6 +11,9 @@ logger = logging.getLogger(__name__)
 
 def correct_with_openai_sv(text: str) -> str:
     try:
+        # ✅ COLLAPSE WHITESPACE (self-defensive, same as Finnish)
+        text = re.sub(r"\s+", " ", text).strip()
+
         system_prompt = (
             "Du är en professionell svensk språkre­daktör. "
             "Din uppgift är att korrigera ALLA fel i stavning, grammatik, "
@@ -38,18 +42,21 @@ def correct_with_openai_sv(text: str) -> str:
 def index(request):
     # Handle AJAX correction (allow anonymous users)
     if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        text = (request.POST.get("text") or "").strip()
+        raw_text = (request.POST.get("text") or "").strip()
 
-        if not text:
+        if not raw_text:
             return JsonResponse({
                 "original_text": "",
                 "corrected_text": "",
             })
 
-        corrected = correct_with_openai_sv(text)
+        # ✅ COLLAPSE ONCE, EARLY, AND USE EVERYWHERE
+        collapsed_text = re.sub(r"\s+", " ", raw_text).strip()
+
+        corrected = correct_with_openai_sv(collapsed_text)
 
         return JsonResponse({
-            "original_text": text,
+            "original_text": collapsed_text,   # ✅ collapsed
             "corrected_text": corrected,
         })
 
@@ -60,7 +67,6 @@ def index(request):
 
 from django.contrib.auth.models import User
 from django.contrib.auth import login
-from django.shortcuts import redirect
 from django.contrib import messages
 
 def register(request):
@@ -87,8 +93,6 @@ def register(request):
 
 
 from django.contrib.auth import authenticate, login
-from django.shortcuts import redirect
-from django.contrib import messages
 
 def login_view(request):
     if request.method != "POST":
@@ -103,7 +107,7 @@ def login_view(request):
 
     user = authenticate(
         request,
-        username=email,   # username IS email in your system
+        username=email,
         password=password
     )
 
@@ -115,9 +119,7 @@ def login_view(request):
     return redirect(request.POST.get("next", "/"))
 
 
-
 from django.contrib.auth import logout
-from django.shortcuts import redirect
 
 def logout_view(request):
     if request.method == "POST":

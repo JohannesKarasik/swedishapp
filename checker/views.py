@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 
+
+
 def correct_with_openai_sv(text: str) -> str:
     try:
         # 🔹 Collapse all whitespace FIRST
@@ -28,8 +30,10 @@ def correct_with_openai_sv(text: str) -> str:
             "- korrigera stavfel INUTI befintliga ord\n"
             "- lägga till eller ta bort skiljetecken SOM ÄR DEL AV ORDET "
             "(t.ex. 'att' → 'att,')\n\n"
+            "- När du lägger till skiljetecken: skriv det DIREKT efter ordet utan mellanslag (t.ex. 'men' → 'men,').\n"
             "Om en ändring kräver omformulering, LÄMNA DEN OÄNDRAD.\n\n"
             "Returnera ENDAST texten, utan förklaringar."
+
         )
 
         resp = client.chat.completions.create(
@@ -55,59 +59,129 @@ def correct_with_openai_sv(text: str) -> str:
         return text
     
 
+import re
+import difflib
+import unicodedata
+
 def find_differences_charwise(original: str, corrected: str):
+    """
+    Token-level diff with alignment.
+
+    Surfaces:
+    - small spelling tweaks inside a word
+    - punctuation edits (especially comma insert/remove)
+
+    Ignores:
+    - bigger rewrites / multi-token replacements (so you don't mark everything red)
+    """
+
     diffs_out = []
 
     orig_text = unicodedata.normalize("NFC", original)
     corr_text = unicodedata.normalize("NFC", corrected)
 
-    token_pattern = r"\w+[.,;:!?]?"
+    # Merge standalone punctuation into previous token
+    def merge_punctuation(tokens):
+        merged = []
+        for tok in tokens:
+            if merged and re.fullmatch(r"[,.:;!?]", tok):
+                merged[-1] += tok
+            else:
+                merged.append(tok)
+        return merged
 
-    orig_tokens = re.findall(token_pattern, orig_text, re.UNICODE)
-    corr_tokens = re.findall(token_pattern, corr_text, re.UNICODE)
+    # Tokenize into words OR single punctuation chars
+    orig_tokens = merge_punctuation(re.findall(r"\w+|[^\w\s]", orig_text, flags=re.UNICODE))
+    corr_tokens = merge_punctuation(re.findall(r"\w+|[^\w\s]", corr_text, flags=re.UNICODE))
 
-    # ❌ Abort if tokens don't line up
-    if len(orig_tokens) != len(corr_tokens):
-        return []
-
-    # Map token → char positions
+    # Map each original token back to (start, end) in original string
     orig_positions = []
     cursor = 0
     for tok in orig_tokens:
         start = orig_text.find(tok, cursor)
+        if start == -1:
+            # If we ever fail mapping, bail out safely
+            return []
         end = start + len(tok)
         orig_positions.append((start, end))
         cursor = end
 
-    def is_small_edit(a: str, b: str) -> bool:
-        a_core = a.lower().strip(".,;:!?")
-        b_core = b.lower().strip(".,;:!?")
+    def span_for_range(i_start, i_end_exclusive):
+        if i_start >= len(orig_positions):
+            return len(orig_text), len(orig_text)
+        if i_start == i_end_exclusive:
+            start_i, _ = orig_positions[i_start]
+            return start_i, start_i
+        start_char = orig_positions[i_start][0]
+        end_char = orig_positions[i_end_exclusive - 1][1]
+        return start_char, end_char
 
-        if a_core == b_core:
+    def is_pure_punctuation(tok: str) -> bool:
+        return bool(re.fullmatch(r"[,.:;!?]+", tok))
+
+    def tokens_are_small_edit(a: str, b: str) -> bool:
+        a_low = a.lower()
+        b_low = b.lower()
+
+        # allow punctuation-only or case-only diffs
+        if a_low.strip(",.;:!?") == b_low.strip(",.;:!?"):
             return True
 
-        ratio = difflib.SequenceMatcher(a=a_core, b=b_core).ratio()
-        return ratio >= 0.8
+        ratio = difflib.SequenceMatcher(a=a_low, b=b_low).ratio()
+        return ratio >= 0.8  # stricter to avoid “everything is a change”
 
-    for i, (orig_tok, corr_tok) in enumerate(zip(orig_tokens, corr_tokens)):
-        if orig_tok == corr_tok:
+    sm = difflib.SequenceMatcher(a=orig_tokens, b=corr_tokens)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "equal":
             continue
 
-        if not is_small_edit(orig_tok, corr_tok):
+        if tag == "replace":
+            # Only accept 1-to-1 small edits (word->word, / stavning)
+            if (i2 - i1) == 1 and (j2 - j1) == 1:
+                orig_tok = orig_tokens[i1]
+                corr_tok = corr_tokens[j1]
+                if tokens_are_small_edit(orig_tok, corr_tok):
+                    start_char, end_char = span_for_range(i1, i2)
+                    diffs_out.append({
+                        "type": "replace",
+                        "start": start_char,
+                        "end": end_char,
+                        "original": orig_tok,
+                        "suggestion": corr_tok,
+                    })
             continue
 
-        start, end = orig_positions[i]
+        if tag == "delete":
+            # Only surface deletion if it's punctuation-ish
+            if (i2 - i1) == 1:
+                orig_tok = orig_tokens[i1]
+                if is_pure_punctuation(orig_tok) or is_pure_punctuation(orig_tok[-1:]):
+                    start_char, end_char = span_for_range(i1, i2)
+                    diffs_out.append({
+                        "type": "delete",
+                        "start": start_char,
+                        "end": end_char,
+                        "original": orig_tok,
+                        "suggestion": "",
+                    })
+            continue
 
-        diffs_out.append({
-            "type": "replace",
-            "start": start,
-            "end": end,
-            "original": orig_tok,
-            "suggestion": corr_tok,
-        })
+        if tag == "insert":
+            # Only surface insertion if it’s punctuation
+            if (j2 - j1) == 1:
+                corr_tok = corr_tokens[j1]
+                if is_pure_punctuation(corr_tok) or is_pure_punctuation(corr_tok[-1:]):
+                    start_char, _ = span_for_range(i1, i1)
+                    diffs_out.append({
+                        "type": "insert",
+                        "start": start_char,
+                        "end": start_char,
+                        "original": "",
+                        "suggestion": corr_tok,
+                    })
+            continue
 
     return diffs_out
-
 
 def index(request):
     if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":

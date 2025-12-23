@@ -444,6 +444,7 @@ def correct_with_openai(text: str) -> str:
                 corrected = corrected2
 
         # 3) Validate: if model added/removed/substituted whole words → retry strict once
+# 3) Validate: if model added/removed/substituted whole words → retry strict once
         if violates_no_word_add_remove(text, corrected):
             strict_prompt = base_prompt + (
                 "\n\nEXTRA STRIKT:\n"
@@ -454,17 +455,22 @@ def correct_with_openai(text: str) -> str:
             corrected2 = call_llm(strict_prompt, text)
             if corrected2:
                 corrected2 = undo_space_merges(text, corrected2)
+
+                # ✅ IMPORTANT: don't return yet — let comma-only pass run later
                 if not violates_no_word_add_remove(text, corrected2):
-                    return corrected2
+                    corrected = corrected2
+                else:
+                    # 4) Salvage instead of returning original:
+                    salvaged = project_safe_word_corrections(text, corrected2)
+                    if not salvaged:
+                        salvaged = project_safe_word_corrections(text, corrected)
 
-            # 4) Salvage instead of returning original:
-            salvaged = project_safe_word_corrections(text, corrected2 or corrected)
-            if not salvaged:
-                return text
+                    if salvaged:
+                        salvaged = insert_commas_with_openai(salvaged)
+                        return salvaged
 
-            # ✅ also run comma-only on salvaged text (safe)
-            salvaged = insert_commas_with_openai(salvaged)
-            return salvaged
+            # If strict failed, keep going with whatever we had (and run comma-only pass)
+
 
         # ✅ second pass: comma-only (won't change words)
         corrected = insert_commas_with_openai(corrected)

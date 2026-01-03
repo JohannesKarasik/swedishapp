@@ -105,8 +105,13 @@ def is_small_word_edit(a: str, b: str) -> bool:
         return edit_distance_leq1(a0, b0)
 
     # For normal words, allow typical misspellings
-    ratio = difflib.SequenceMatcher(a=a0, b=b0).ratio()
-    return ratio >= 0.72
+    if maxlen <= 4:
+        return edit_distance_leq1(a0, b0)
+    elif maxlen <= 7:
+        return difflib.SequenceMatcher(a=a0, b=b0).ratio() >= 0.85
+    else:
+        return difflib.SequenceMatcher(a=a0, b=b0).ratio() >= 0.90
+
 
 
 def violates_no_word_add_remove(original: str, corrected: str) -> bool:
@@ -390,27 +395,43 @@ def correct_with_openai(text: str) -> str:
     try:
         base_prompt = (
             "Du är en professionell svensk korrekturläsare.\n\n"
-            "MÅL: Rätta ALLA stavfel och ALL interpunktion, särskilt kommatecken, utan att ändra innehåll.\n\n"
+            "MÅL: Rätta ALLA stavfel och ALL interpunktion i texten, särskilt kommatecken, "
+            "utan att ändra innehåll, ordval eller ordföljd.\n\n"
+
             "ABSOLUTA REGLER (MÅSTE FÖLJAS):\n"
             "- LÄGG INTE TILL nya ord\n"
             "- TA INTE BORT ord\n"
             "- ÄNDRA INTE ordens ordning\n"
             "- Skriv INTE om meningar och använd INTE synonymer\n"
-            "- Du får endast ändra bokstäver INUTI befintliga ord för att rätta stavfel\n"
-            "- Du får rätta interpunktion (komma/punkt/kolon/citattecken) och mellanslag\n"
-            "- Bevara radbrytningar och stycken exakt som i input\n\n"
-            "KOMMA-KONTROLL (MÅSTE GÖRAS INNAN DU SVARAR): Gå mening för mening och rätta kommatecken när regeln kräver det:\n"
-            "1) Komma efter inledande bisats:\n"
-            "   Om/När/Då/Därför att/Eftersom/Sedan/Medan/Efter att/För att/Ifall ... ,\n"
-            "2) Komma runt inskjutna bisatser/parentetiska inskott.\n"
-            "3) Komma före 'men' och ibland före 'och/eller' när det binder ihop två självständiga huvudsatser "
-            "(båda har eget subjekt + verb).\n"
-            "4) Komma i uppräkningar när det behövs för tydlighet.\n"
-            "5) Sätt INTE komma mellan subjekt och verb i en enkel huvudsats.\n\n"
-            "VIKTIGT: Texten innehåller fel. Du ska hitta och rätta dem inom reglerna.\n"
-            "Returnera inte identisk text om det finns kommateckenfel eller tydliga stavfel.\n\n"
+            "- Ändra ENDAST bokstäver INUTI befintliga ord för att rätta stavfel\n"
+            "- Du får rätta interpunktion (komma, punkt, kolon, citattecken) och mellanslag\n"
+            "- Bevara radbrytningar och stycken EXAKT som i input\n\n"
+
+            "OBLIGATORISK FELKONTROLL (UTFÖRS TYST INNAN DU SVARAR):\n"
+            "För VARJE mening måste du kontrollera ALLA punkter nedan. "
+            "Hoppa inte över någon punkt, även om meningen ser korrekt ut.\n\n"
+
+            "A) STAVNING:\n"
+            "- Kontrollera varje ord för felstavning\n"
+            "- Kontrollera dubbelteckning, sammansättningar och vanliga förväxlingar\n\n"
+
+            "B) KOMMATECKEN (MYCKET VIKTIGT):\n"
+            "1) Inledande bisats → KOMMA KRÄVS\n"
+            "   (Om, När, Eftersom, Medan, Sedan, För att, Ifall, Då)\n"
+            "2) Inskjutna bisatser / parentetiska inskott → KOMMA RUNT\n"
+            "3) Två huvudsatser med 'och', 'men', 'eller':\n"
+            "   - Har båda subjekt + verb → KOMMA KRÄVS\n"
+            "4) Uppräkningar → KOMMA där det krävs för korrekt grammatik\n"
+            "5) Enkel huvudsats → SÄTT ALDRIG komma mellan subjekt och verb\n\n"
+
+            "C) SLUTKONTROLL:\n"
+            "- Om ett komma saknas enligt reglerna är det ALLTID ett fel\n"
+            "- Om ett stavfel finns måste det rättas\n"
+            "- Returnera ALDRIG identisk text om något fel finns\n\n"
+
             "Returnera ENDAST den korrigerade texten. Ingen förklaring."
         )
+
 
         def call_llm(system_prompt: str, user_text: str) -> str:
             resp = client.chat.completions.create(
@@ -427,6 +448,11 @@ def correct_with_openai(text: str) -> str:
         corrected = call_llm(base_prompt, text)
         if not corrected:
             return text
+        
+                # 🚨 HARD FAIL: text had errors but model returned unchanged output
+        if corrected.strip() == text.strip():
+            raise RuntimeError("Model returned unchanged text despite required corrections")
+
 
         corrected = undo_space_merges(text, corrected)
 

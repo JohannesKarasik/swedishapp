@@ -49,8 +49,9 @@
 
           <div class="checker-hero">
             <header>
-              <h1>Rett teksten din med Rettskriving Sjekk</h1>
-              <p>Rettskriving Sjekk er et avansert og brukervennlig korrekturverktøy som hjelper deg med å forbedre skrivefeil, grammatikkfeil, stavefeil og tegnsettingsfeil på norsk – på sekunder.</p>
+              <h1>Rätta Stavning och Grammatik i Svenska Texter Online</h1>
+              <p>  Rätta text, grammatik och stavning svenska texter direkt online med vårt kostnadsfria rättstavningsprogram.
+              </p>
             </header>
           </div>
 
@@ -69,23 +70,25 @@
                   placeholder="Lim inn teksten din her..."></div>
 
                 <p id="length-error" class="length-error" hidden>
-                  Teksten er for lang. Du kan rette maks 800 ord om gangen.
+                  Texten är för lång. Du kan rätta max 800 tecken åt gången.
                 </p>
 
                 <div class="meta" id="counter">
                   <div class="counter" aria-live="polite">
                     <span id="words">0</span> ord
                     <span>·</span>
-                    <span id="chars">0</span> tegn
+                    <span id="chars">0</span> tecken
+
                   </div>
                 </div>
 
                 <div class="actions">
                   <button type="submit" id="submit" class="btn btn--primary">
                     <span class="spinner" aria-hidden="true"></span>
-                    Rett tekst
+                                Rätta text
+
                   </button>
-                  <button type="button" class="btn btn--ghost" id="clear">Tøm</button>
+                  <button type="button" class="btn btn--ghost" id="clear">Rensa</button>
                 </div>
               </div>
             </form>
@@ -93,52 +96,54 @@
 
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <aside class="checker-sidebar" id="suggestions-panel" aria-label="Forslag">
+<!-- RIGHT COLUMN -->
+<aside class="checker-sidebar" id="suggestions-panel" aria-label="Förslag">
 
-          <div class="checker-sidebar__head">
-            <div>
-              <div class="checker-sidebar__title">Forslag</div>
-              <div class="checker-sidebar__sub">Klikk et forslag for å hoppe til feilen.</div>
-            </div>
-            <div class="checker-sidebar__count">
-              <span id="suggestions-count">0</span>
-            </div>
-          </div>
+  <div class="checker-sidebar__head">
+    <div>
+      <div class="checker-sidebar__title">Förslag</div>
+      <div class="checker-sidebar__sub">Klicka på ett förslag för att hoppa till felet.</div>
+    </div>
+    <div class="checker-sidebar__count">
+      <span id="suggestions-count">0</span>
+    </div>
+  </div>
 
-          <div class="quality-summary" id="quality-summary" hidden>
-            <div class="quality-summary__title">Tekstkvalitet</div>
+  <div class="quality-summary" id="quality-summary" hidden>
+    <div class="quality-summary__title">Textkvalitet</div>
 
-            <div class="quality-summary__grid">
-              <div class="qs-item">
-                <span class="qs-label">Alvorlige feil</span>
-                <span class="qs-count qs-count--serious" id="qs-serious">0</span>
-              </div>
+    <div class="quality-summary__grid">
+      <div class="qs-item">
+        <span class="qs-label">Allvarliga fel</span>
+        <span class="qs-count qs-count--serious" id="qs-serious">0</span>
+      </div>
 
-              <div class="qs-item">
-                <span class="qs-label">Små feil</span>
-                <span class="qs-count qs-count--small" id="qs-small">0</span>
-              </div>
+      <div class="qs-item">
+        <span class="qs-label">Små fel</span>
+        <span class="qs-count qs-count--small" id="qs-small">0</span>
+      </div>
 
-              <div class="qs-item">
-                <span class="qs-label">Forbedringer</span>
-                <span class="qs-count qs-count--improve" id="qs-improve">0</span>
-              </div>
-            </div>
-          </div>
+      <div class="qs-item">
+        <span class="qs-label">Förbättringar</span>
+        <span class="qs-count qs-count--improve" id="qs-improve">0</span>
+      </div>
+    </div>
+  </div>
 
-          <div class="checker-sidebar__empty" id="suggestions-empty">
-            Trykk <strong>Rett tekst</strong> for å se forslag her.
-          </div>
+  <div class="checker-sidebar__empty" id="suggestions-empty">
+    Klicka på <strong>Rätta text</strong> för att se förslag här.
+  </div>
 
-          <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
-            <p><strong>Opprett konto for å se forslagene</strong></p>
-            <p>Du kan rette én feil gratis. Opprett konto for å fortsette.</p>
-          
-            <button type="button" class="btn btn--primary" onclick="window.openRegisterModal()">
-              Opprett konto
-            </button>
-          </div>
+  <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
+    <p><strong>Skapa konto för att se förslagen</strong></p>
+    <p>Du kan rätta ett fel gratis. Skapa konto för att fortsätta.</p>
+  
+    <button type="button" class="btn btn--primary" onclick="window.openRegisterModal()">
+      Skapa konto
+    </button>
+  </div>
+</aside>
+
           
           
 
@@ -150,77 +155,93 @@
 
     
 
-
-     <div class="card__body">
+    <div class="card__body">
       <section class="seo seo--rich" aria-labelledby="seo-title">
-
-
-        <style>
-          h1, h2, h3 { color: #2c3e50; }
-          ul { padding-left: 20px; }
-          li { margin-bottom: 10px; }
-          blockquote { border-left: 4px solid #ccc; padding-left: 10px; color: #555; margin: 20px 0; }
-        </style>
-
-        <h1>Skriv feilfritt med Rettskriving Sjekk</h1>
-      
-        <p>Rettskriving Sjekk er et avansert og brukervennlig korrekturverktøy som hjelper deg med å forbedre skrivefeil, grammatikkfeil, stavefeil og tegnsettingsfeil på norsk – på sekunder.</p>
-      
-        <hr>
-      
-        <h2>Hva kan du bruke Rettskriving Sjekk til?</h2>
-        <p>Enten du skriver e-post, skoleoppgaver, rapporter, artikler eller sosiale medier, hjelper Rettskriving Sjekk deg med å skrive korrekt og profesjonelt. Verktøyet passer for studenter, profesjonelle, lærere, og alle som skriver på norsk.</p>
-        <ul>
-          <li><strong>Grammatikk sjekk:</strong> Finner og forklarer grammatiske feil</li>
-          <li><strong>Stavekontroll norsk:</strong> Retter feilstavede ord raskt og nøyaktig</li>
-          <li><strong>Tegnsettingskontroll:</strong> Oppdager manglende komma, punktum og mer</li>
-          <li><strong>Riktig stavemåte og språkflyt:</strong> Gjør teksten lettere å lese</li>
-          <li><strong>Korrektur og språkvask:</strong> Forbedrer setningsstruktur og stil</li>
-        </ul>
-      
-        <hr>
-      
-        <h2>Hvorfor velge Rettskriving Sjekk?</h2>
-        <ul class="feature-list">
-          <li><span class="check"></span><strong>Gratis og tilgjengelig</strong>: Ingen registrering, ingen betaling</li>
-          <li><span class="check"></span><strong>Rask og enkel å bruke</strong>: Lim inn teksten og se resultatene umiddelbart</li>
-          <li><span class="check"></span><strong>Bygget for norsk</strong>: Spesielt utviklet for norsk grammatikk og rettskriving</li>
-          <li><span class="check"></span><strong>AI-drevet teknologi</strong>: Bruker avansert algoritme for presis korreksjon</li>
-        </ul>
-        
-      
-        <hr>
-      
-        <h2>Vanlige spørsmål (FAQ)</h2>
+ 
+ 
+        <h2 id="seo-title">Rätta Text och Grammatik i Svenska Texter</h2>
+     
         <p>
-          <strong>Er dette verktøyet virkelig gratis?</strong><br>
-          Ja. Rettskriving Sjekk er 100 % gratis å bruke, uten skjulte kostnader.
+        Vill du <strong>rätta text</strong>, grammatik och <strong>stavning i svenska texter</strong>?
+        Med vårt kostnadsfria <strong>rättstavningsprogram</strong> kan du enkelt kontrollera
+        stavning, grammatik och meningsbyggnad – direkt online.
         </p>
-              
-        <p><strong>Trenger jeg å laste ned noe?</strong><br>Nei, det hele skjer direkte på nettsiden – bare lim inn teksten og rett i vei.</p>
-      
-      
-        <hr>
-      
-        <h2>Start korrekturen nå</h2>
-        <p>Prøv Rettskriving Sjekk nedenfor. Få rask, enkel og nøyaktig korrektur på sekunder.</p>
-      
-        <p><strong>Ingen brukerregistrering. Ingen kostnad. Bare ren, korrekt norsk tekst.</strong></p>
-      
-        <hr>
-      
-
-      
-        <blockquote>
-          Klar til å rette teksten din? Scroll ned og prøv Rettskriving Sjekk nå!
-        </blockquote>
-      
-      
-      
-      
+     
+        <p>
+        Verktyget är utvecklat specifikt för <strong>svenska språket</strong> och hjälper dig att
+        snabbt förbättra din text, oavsett om du skriver uppsats, mejl, rapport eller annat innehåll.
+        </p>
+     
+        <h3>Rätta grammatik och stavning på sekunder</h3>
+        <p>
+        Klistra in din text i fältet ovan så analyseras den automatiskt.
+        Verktyget hjälper dig att rätta:
+        </p>
+     
+        <ul>
+          <li>Stavning svenska ord och vanliga stavfel</li>
+          <li>Grammatikfel i svenska meningar</li>
+          <li>Felaktig meningsbyggnad</li>
+          <li>Extra mellanslag och interpunktion</li>
+        </ul>
+     
+        <p>
+        Resultatet blir en tydligare, mer korrekt och mer professionell text.
+        </p>
+     
+        <h3>Vad är ett rättstavningsprogram?</h3>
+        <p>
+        Ett <strong>rättstavningsprogram</strong> är ett digitalt verktyg som granskar text och hjälper
+        dig att rätta stavning och grammatik. Vår lösning är anpassad för <strong>svenska texter</strong>
+        och använder modern språkteknologi för att ge relevanta förslag.
+        </p>
+     
+        <p>
+        Till skillnad från enkla rättstavare tar verktyget hänsyn till sammanhang,
+        vilket gör texten mer naturlig och lättläst.
+        </p>
+     
+        <h3>Varför rätta svenska texter online?</h3>
+        <ul class="seo-checklist">
+          <li>Du kan rätta text direkt i webbläsaren</li>
+          <li>Fungerar för både korta och längre svenska texter</li>
+          <li>Hjälper dig att skriva korrekt och tydligt</li>
+        </ul>
+     
+        <p>
+        Oavsett om du vill rätta ett enstaka ord eller granska en hel text är detta ett
+        smidigt sätt att förbättra din svenska.
+        </p>
+     
+        <h3>Passar perfekt för</h3>
+        <ul>
+          <li>Studenter som vill rätta uppsatser</li>
+          <li>Yrkespersoner som skriver mejl och rapporter</li>
+          <li>Bloggare och innehållsskapare</li>
+          <li>Alla som vill förbättra sin stavning svenska texter</li>
+        </ul>
+     
+        <h3>Stavning svenska – helt online</h3>
+        <p>
+        Du behöver inte installera något program. Vårt <strong>rättstavningsprogram</strong>
+        fungerar helt online och kan användas på dator, surfplatta och mobil.
+        </p>
+     
+        <p>
+        Rätta text och grammatik när och var du vill.
+        </p>
+     
+        <h3>Testa och rätta text nu</h3>
+        <p>
+        Klistra in din text högst upp på sidan och klicka på <strong>Rätta text</strong>
+        för att kontrollera stavning och grammatik direkt.
+        </p>
+     
       </section>
-      
+     
+     
      </div>
+ 
 
 
    </main>

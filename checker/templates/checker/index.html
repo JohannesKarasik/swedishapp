@@ -2,16 +2,16 @@
 
 
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="no">
 <head>
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-M054LCGGMW"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W536FJFK9J"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-M054LCGGMW');
+  gtag('config', 'G-W536FJFK9J');
 </script>
   <link rel="icon" href="{% static 'checker/favicon_io/favicon.ico' %}">
 <link rel="icon" type="image/png" sizes="32x32" href="{% static 'checker/favicon_io/favicon-32x32.png' %}">
@@ -22,11 +22,17 @@
 <link rel="manifest" href="{% static 'checker/favicon_io/site.webmanifest' %}">
  <meta charset="UTF-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1" />
- <title>Rätta Text & Grammatik Online – Stavning Svenska Texter</title>
- <meta name="description" content="Rätta text, grammatik och stavning i svenska texter online. Använd vårt gratis rättstavningsprogram för snabb och enkel textgranskning.">
+ <title>Rettskriving Sjekk – Korrektur og Grammatikk på Norsk</title>
+ <meta name="description" content="Sjekk rettskriving, grammatikk og tegnsetting på norsk. Bruk vårt gratis korrekturverktøy for feilfri tekst – ingen innlogging, ingen kostnad">
  <link rel="stylesheet" href="{% static 'checker/main.css' %}">
 </head>
 <body>
+  <script>
+    window.IS_AUTHENTICATED = {{ request.user.is_authenticated|yesno:"true,false" }};
+    window.IS_PAYING = {{ is_paying|yesno:"true,false" }};
+    console.log("IS_PAYING (server) =", window.IS_PAYING);
+  </script>
+  
  {% include "checker/header.html" %}
 
 
@@ -34,139 +40,185 @@
    <main class="card" id="korr">
 
 
-     <div class="card__body">
-       <header>
-        <h1>Rätta Stavning och Grammatik i Svenska Texter Online</h1>
-        <p class="sub">
-        Rätta text, grammatik och stavning svenska texter direkt online med vårt kostnadsfria rättstavningsprogram.
-        </p>
-        
-       </header>
-     </div>
+    <div class="card__body">
+      <div class="checker-layout">
 
+        <!-- LEFT ROW 1: title/subtitle -->
+        <!-- LEFT COLUMN -->
+        <div class="checker-left">
 
-     <div class="card__body">
-       <form method="POST" id="form">
-         {% csrf_token %}
+          <div class="checker-hero">
+            <header>
+              <h1>Rett teksten din med Rettskriving Sjekk</h1>
+              <p>Rettskriving Sjekk er et avansert og brukervennlig korrekturverktøy som hjelper deg med å forbedre skrivefeil, grammatikkfeil, stavefeil og tegnsettingsfeil på norsk – på sekunder.</p>
+            </header>
+          </div>
 
+          <div class="checker-tool">
+            <form method="POST" id="form">
+              {% csrf_token %}
 
-         <div
-           id="text-editor"
-           class="editor"
-           contenteditable="true"
-           role="textbox"
-           aria-multiline="true"
-           spellcheck="false"
-           placeholder="Klistra in din text här..."></div>
-           <p id="length-error" class="length-error" hidden>
-             Texten är för lång. Du kan rätta max 800 tecken åt gången.
-           </p>
+              <div class="checker-main">
+                <div
+                  id="text-editor"
+                  class="editor"
+                  contenteditable="true"
+                  role="textbox"
+                  aria-multiline="true"
+                  spellcheck="false"
+                  placeholder="Lim inn teksten din her..."></div>
+
+                <p id="length-error" class="length-error" hidden>
+                  Teksten er for lang. Du kan rette maks 800 ord om gangen.
+                </p>
+
+                <div class="meta" id="counter">
+                  <div class="counter" aria-live="polite">
+                    <span id="words">0</span> ord
+                    <span>·</span>
+                    <span id="chars">0</span> tegn
+                  </div>
+                </div>
+
+                <div class="actions">
+                  <button type="submit" id="submit" class="btn btn--primary">
+                    <span class="spinner" aria-hidden="true"></span>
+                    Rett tekst
+                  </button>
+                  <button type="button" class="btn btn--ghost" id="clear">Tøm</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <aside class="checker-sidebar" id="suggestions-panel" aria-label="Forslag">
+
+          <div class="checker-sidebar__head">
+            <div>
+              <div class="checker-sidebar__title">Forslag</div>
+              <div class="checker-sidebar__sub">Klikk et forslag for å hoppe til feilen.</div>
+            </div>
+            <div class="checker-sidebar__count">
+              <span id="suggestions-count">0</span>
+            </div>
+          </div>
+
+          <div class="quality-summary" id="quality-summary" hidden>
+            <div class="quality-summary__title">Tekstkvalitet</div>
+
+            <div class="quality-summary__grid">
+              <div class="qs-item">
+                <span class="qs-label">Alvorlige feil</span>
+                <span class="qs-count qs-count--serious" id="qs-serious">0</span>
+              </div>
+
+              <div class="qs-item">
+                <span class="qs-label">Små feil</span>
+                <span class="qs-count qs-count--small" id="qs-small">0</span>
+              </div>
+
+              <div class="qs-item">
+                <span class="qs-label">Forbedringer</span>
+                <span class="qs-count qs-count--improve" id="qs-improve">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="checker-sidebar__empty" id="suggestions-empty">
+            Trykk <strong>Rett tekst</strong> for å se forslag her.
+          </div>
+
+          <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
+            <p><strong>Opprett konto for å se forslagene</strong></p>
+            <p>Du kan rette én feil gratis. Opprett konto for å fortsette.</p>
+          
+            <button type="button" class="btn btn--primary" onclick="window.openRegisterModal()">
+              Opprett konto
+            </button>
+          </div>
+          
           
 
+          <ul class="checker-sidebar__list" id="suggestions-list"></ul>
+        </aside>
 
-         <div class="meta" id="counter">
-           <div class="counter" aria-live="polite">
-             <span id="words">0</span> ord
-             <span>·</span>
-             <span id="chars">0</span> tecken
-           </div>
-         </div>
+      </div>
+    </div>
 
-
-         <div class="actions">
-           <button type="submit" id="submit" class="btn btn--primary">
-             <span class="spinner" aria-hidden="true"></span>
-             Rätta text
-           </button>
-           <button class="btn btn--ghost" id="clear">Rensa</button>
-         </div>
-       </form>
-     </div>
+    
 
 
      <div class="card__body">
       <section class="seo seo--rich" aria-labelledby="seo-title">
 
-        <h2 id="seo-title">Rätta Text och Grammatik i Svenska Texter</h2>
+
+        <style>
+          h1, h2, h3 { color: #2c3e50; }
+          ul { padding-left: 20px; }
+          li { margin-bottom: 10px; }
+          blockquote { border-left: 4px solid #ccc; padding-left: 10px; color: #555; margin: 20px 0; }
+        </style>
+
+        <h1>Skriv feilfritt med Rettskriving Sjekk</h1>
       
-        <p>
-        Vill du <strong>rätta text</strong>, grammatik och <strong>stavning i svenska texter</strong>? 
-        Med vårt kostnadsfria <strong>rättstavningsprogram</strong> kan du enkelt kontrollera 
-        stavning, grammatik och meningsbyggnad – direkt online.
-        </p>
+        <p>Rettskriving Sjekk er et avansert og brukervennlig korrekturverktøy som hjelper deg med å forbedre skrivefeil, grammatikkfeil, stavefeil og tegnsettingsfeil på norsk – på sekunder.</p>
       
-        <p>
-        Verktyget är utvecklat specifikt för <strong>svenska språket</strong> och hjälper dig att 
-        snabbt förbättra din text, oavsett om du skriver uppsats, mejl, rapport eller annat innehåll.
-        </p>
+        <hr>
       
-        <h3>Rätta grammatik och stavning på sekunder</h3>
-        <p>
-        Klistra in din text i fältet ovan så analyseras den automatiskt. 
-        Verktyget hjälper dig att rätta:
-        </p>
-      
+        <h2>Hva kan du bruke Rettskriving Sjekk til?</h2>
+        <p>Enten du skriver e-post, skoleoppgaver, rapporter, artikler eller sosiale medier, hjelper Rettskriving Sjekk deg med å skrive korrekt og profesjonelt. Verktøyet passer for studenter, profesjonelle, lærere, og alle som skriver på norsk.</p>
         <ul>
-          <li>Stavning svenska ord och vanliga stavfel</li>
-          <li>Grammatikfel i svenska meningar</li>
-          <li>Felaktig meningsbyggnad</li>
-          <li>Extra mellanslag och interpunktion</li>
+          <li><strong>Grammatikk sjekk:</strong> Finner og forklarer grammatiske feil</li>
+          <li><strong>Stavekontroll norsk:</strong> Retter feilstavede ord raskt og nøyaktig</li>
+          <li><strong>Tegnsettingskontroll:</strong> Oppdager manglende komma, punktum og mer</li>
+          <li><strong>Riktig stavemåte og språkflyt:</strong> Gjør teksten lettere å lese</li>
+          <li><strong>Korrektur og språkvask:</strong> Forbedrer setningsstruktur og stil</li>
         </ul>
       
-        <p>
-        Resultatet blir en tydligare, mer korrekt och mer professionell text.
-        </p>
+        <hr>
       
-        <h3>Vad är ett rättstavningsprogram?</h3>
-        <p>
-        Ett <strong>rättstavningsprogram</strong> är ett digitalt verktyg som granskar text och hjälper 
-        dig att rätta stavning och grammatik. Vår lösning är anpassad för <strong>svenska texter</strong> 
-        och använder modern språkteknologi för att ge relevanta förslag.
-        </p>
-      
-        <p>
-        Till skillnad från enkla rättstavare tar verktyget hänsyn till sammanhang, 
-        vilket gör texten mer naturlig och lättläst.
-        </p>
-      
-        <h3>Varför rätta svenska texter online?</h3>
-        <ul class="seo-checklist">
-          <li>Du kan rätta text direkt i webbläsaren</li>
-          <li>Fungerar för både korta och längre svenska texter</li>
-          <li>Hjälper dig att skriva korrekt och tydligt</li>
+        <h2>Hvorfor velge Rettskriving Sjekk?</h2>
+        <ul class="feature-list">
+          <li><span class="check"></span><strong>Gratis og tilgjengelig</strong>: Ingen registrering, ingen betaling</li>
+          <li><span class="check"></span><strong>Rask og enkel å bruke</strong>: Lim inn teksten og se resultatene umiddelbart</li>
+          <li><span class="check"></span><strong>Bygget for norsk</strong>: Spesielt utviklet for norsk grammatikk og rettskriving</li>
+          <li><span class="check"></span><strong>AI-drevet teknologi</strong>: Bruker avansert algoritme for presis korreksjon</li>
         </ul>
+        
       
+        <hr>
+      
+        <h2>Vanlige spørsmål (FAQ)</h2>
         <p>
-        Oavsett om du vill rätta ett enstaka ord eller granska en hel text är detta ett 
-        smidigt sätt att förbättra din svenska.
+          <strong>Er dette verktøyet virkelig gratis?</strong><br>
+          Ja. Rettskriving Sjekk er 100 % gratis å bruke, uten skjulte kostnader.
         </p>
+              
+        <p><strong>Trenger jeg å laste ned noe?</strong><br>Nei, det hele skjer direkte på nettsiden – bare lim inn teksten og rett i vei.</p>
       
-        <h3>Passar perfekt för</h3>
-        <ul>
-          <li>Studenter som vill rätta uppsatser</li>
-          <li>Yrkespersoner som skriver mejl och rapporter</li>
-          <li>Bloggare och innehållsskapare</li>
-          <li>Alla som vill förbättra sin stavning svenska texter</li>
-        </ul>
       
-        <h3>Stavning svenska – helt online</h3>
-        <p>
-        Du behöver inte installera något program. Vårt <strong>rättstavningsprogram</strong> 
-        fungerar helt online och kan användas på dator, surfplatta och mobil.
-        </p>
+        <hr>
       
-        <p>
-        Rätta text och grammatik när och var du vill.
-        </p>
+        <h2>Start korrekturen nå</h2>
+        <p>Prøv Rettskriving Sjekk nedenfor. Få rask, enkel og nøyaktig korrektur på sekunder.</p>
       
-        <h3>Testa och rätta text nu</h3>
-        <p>
-        Klistra in din text högst upp på sidan och klicka på <strong>Rätta text</strong> 
-        för att kontrollera stavning och grammatik direkt.
-        </p>
+        <p><strong>Ingen brukerregistrering. Ingen kostnad. Bare ren, korrekt norsk tekst.</strong></p>
+      
+        <hr>
+      
+
+      
+        <blockquote>
+          Klar til å rette teksten din? Scroll ned og prøv Rettskriving Sjekk nå!
+        </blockquote>
+      
+      
+      
       
       </section>
-      
       
      </div>
 
@@ -177,38 +229,88 @@
 
  {% include "checker/footer.html" %}
 
-
 <!-- LOGIN MODAL -->
 <div class="modal" id="auth-modal" aria-hidden="true">
- <div class="modal__overlay"></div>
- <div class="modal__content" role="dialog" aria-modal="true">
+  <div class="modal__overlay"></div>
+  <div class="modal__content" role="dialog" aria-modal="true">
+ 
+ 
+    <button class="modal__close" id="auth-close" aria-label="Lukk">×</button>
+ 
+ 
+    <h2 class="subheading">Logg inn</h2>
+    <p class="sub">Du må være innlogget for å rette tekst.</p>
 
+    {% if messages %}
+  {% for message in messages %}
+    {% if message.tags == "error" %}
+      <div class="auth-error">
+        {{ message }}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
 
-   <button class="modal__close" id="auth-close" aria-label="Stäng">×</button>
-
-
-   <h2 class="subheading">Logga in</h2>
-   <p class="sub">Du måste vara inloggad för att rätta text.</p>
-
-
-   <form method="post" action="{% url 'login' %}" class="auth-form">
-     {% csrf_token %}
-     <input type="hidden" name="next" value="{{ request.path }}">
-  
-     <div class="auth-fields">
-       <input type="email" name="email" required placeholder="E-post" autocomplete="email">
-       <input type="password" name="password" required placeholder="Lösenord" autocomplete="current-password">
-     </div>
-    
-  
-     <div class="auth-actions">
-       <button class="btn btn--primary" type="submit">Logga in</button>
-    
-       <button type="button" class="auth-link" id="open-register">
-         Skapa konto
-       </button>
-     </div>
-    
+ 
+ 
+    <form method="post" action="{% url 'login' %}" class="auth-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+   
+      <div class="auth-fields">
+        <input type="email" name="email" required placeholder="E-post" autocomplete="email">
+        <input type="password" name="password" required placeholder="Passord" autocomplete="current-password">
+      </div>
+     
+   
+      <div class="auth-actions">
+        <button class="btn btn--primary" type="submit">Logg inn</button>
+     
+        <button type="button" class="auth-link" id="open-register">
+          Opprett konto
+        </button>
+      </div>
+     
+    </form>
+   
+ 
+ 
+  </div>
+ </div>
+ 
+ 
+ <!-- REGISTER MODAL -->
+ <div class="modal" id="register-modal" aria-hidden="true">
+  <div class="modal__overlay"></div>
+  <div class="modal__content" role="dialog" aria-modal="true">
+ 
+ 
+    <button class="modal__close" id="register-close" aria-label="Lukk">×</button>
+ 
+ 
+    <h2 class="subheading" style="margin-top: 0px;">Opprett konto</h2>
+    <p class="sub">Opprett en konto for å kunne rette tekst.</p>
+ 
+ 
+    <!-- Uses Django’s default UserCreationForm field names -->
+    <form method="post" action="{% url 'register' %}" class="auth-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+   
+      <div class="auth-fields">
+        <input type="text" name="name" required placeholder="Navn" autocomplete="name">
+        <input type="email" name="email" required placeholder="E-post" autocomplete="email">
+        <input type="password" name="password" required placeholder="Passord" autocomplete="new-password">
+      </div>
+     
+   
+      <div class="auth-actions">
+        <button class="btn btn--primary" type="submit">Opprett konto</button>
+        <button type="button" class="auth-link" id="open-login">
+          Jeg har allerede en konto
+        </button>
+              </div>
+ 
    </form>
   
 
@@ -217,457 +319,2657 @@
 </div>
 
 
-<!-- REGISTER MODAL -->
-<div class="modal" id="register-modal" aria-hidden="true">
- <div class="modal__overlay"></div>
- <div class="modal__content" role="dialog" aria-modal="true">
+<!-- PAYMENT MODAL -->
+<div id="paymentModal" class="pay-modal" role="dialog" aria-modal="true"
+     aria-labelledby="pay-modal-title" aria-describedby="pay-modal-desc" hidden>
+  <div class="pay-modal__overlay" data-close-modal></div>
 
+  <div class="pay-modal__content pay-modal__content--wide" role="document">
+    <button class="pay-modal__close" aria-label="Lukk">
+      &times;
+    </button>
 
-   <button class="modal__close" id="register-close" aria-label="Stäng">×</button>
+    <div class="pay-modal__badge" aria-hidden="true">
+      30 dagers gratis prøve
+    </div>
 
+    <h2 id="pay-modal-title">Få tilgang til Rettskriving Sjekk</h2>
 
-   <h2 class="subheading" style="margin-top: 0px;">Skapa konto</h2>
-   <p class="sub">Skapa ett konto för att kunna rätta text.</p>
+    <p id="pay-modal-desc" class="pay-modal__subtext">
+      Du får full tilgang i 30 dager helt gratis.
+      Ønsker du å fortsette etter prøveperioden,
+      koster det 69 kr per måned.
+      Du kan når som helst avslutte før prøveperioden utløper.
+    </p>
 
-
-   <!-- Uses Django’s default UserCreationForm field names -->
-   <form method="post" action="{% url 'register' %}" class="auth-form">
-     {% csrf_token %}
-     <input type="hidden" name="next" value="{{ request.path }}">
-  
-     <div class="auth-fields">
-       <input type="text" name="name" required placeholder="Namn" autocomplete="name">
-       <input type="email" name="email" required placeholder="E-post" autocomplete="email">
-       <input type="password" name="password" required placeholder="Lösenord" autocomplete="new-password">
-     </div>
+    <button class="pay-modal__cta" id="start-checkout">
+      Start gratis prøve
+    </button>
     
-  
-     <div class="auth-actions">
-       <button class="btn btn--primary" type="submit">Skapa konto</button>
-       <button type="button" class="auth-link" id="open-login">
-         Jag har redan ett konto
-       </button>
-             </div>
-   </form>
-  
-
-
- </div>
+  </div>
 </div>
+
+
+<div class="tooltip-portal"></div>
 
 
 
 
 <style>
- /* Modal sizing */
-/* Center modal vertically + horizontally */
-.modal{
- position: fixed;
- inset: 0;
- display: none;        /* hidden by default */
- z-index: 1000;
- padding: 24px;
+  /* Modal sizing */
+ /* Center modal vertically + horizontally */
+ .modal{
+  position: fixed;
+  inset: 0;
+  display: none;        /* hidden by default */
+  z-index: 1000;
+  padding: 24px;
+ }
+ 
+ 
+ .modal.active{
+  display: flex;        /* ONLY show when active */
+  align-items: center;
+  justify-content: center;
+ }
+ 
+ 
+ 
+ 
+ /* Make overlay cover full screen behind content */
+ .modal__overlay{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(3px);
+ }
+ 
+ 
+ /* Your sizing stays, just remove any margin-based centering */
+ .modal__content{
+  position: relative;
+  max-width: 560px;
+  width: 100%;
+  padding: 30px 32px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 40px rgba(0,0,0,.2);
+ }
+ 
+ 
+ /* Center modal title + subtitle */
+ .modal__content h2,
+ .modal__content .sub{
+  text-align: center;
+ }
+ 
+ 
+ .sub{
+  margin-bottom: 30px;
+ }
+ 
+ 
+ .subheading{
+  margin-bottom: 0px;
+ }
+ 
+ 
+ /* Layout */
+ .auth-form{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 20px;
+ }
+ 
+ 
+ /* spacing BETWEEN fields only */
+ .auth-fields{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+  align-items:center;
+ }
+ 
+ 
+ /* spacing BETWEEN buttons only */
+ .auth-actions{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:14px;
+  width:100%;
+  align-items:center;
+ }
+ 
+ 
+ /* shared width */
+ .auth-fields input,
+ .auth-actions .btn{
+  width:450px;
+  max-width:100%;
+ }
+ 
+ 
+ /* ✅ Modern input styling */
+ .auth-fields input{
+  appearance:none;
+  -webkit-appearance:none;
+  height:46px;
+  padding:0 14px;
+  border:1.5px solid #cbd5e1;
+  border-radius:12px;
+  background:#f9fafb;
+  color:var(--text);
+  font-size:15px;
+  line-height:1;
+  outline:none;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+ }
+ 
+ 
+ .auth-fields input::placeholder{
+  color:#6b7280;
+  opacity: 1;
+ }
+ 
+ 
+ .auth-fields input:focus{
+  background:#fff;
+  border-color: color-mix(in oklab, var(--accent), #fff 30%);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
+ }
+ 
+ 
+ /* Optional: nicer autofill */
+ .auth-fields input:-webkit-autofill{
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px #f9fafb inset;
+  transition: background-color 9999s ease-out 0s;
+ }
+ .auth-fields input:-webkit-autofill:focus{
+  box-shadow:
+    0 0 0 1000px #fff inset,
+    0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
+ }
+ 
+ 
+ /* Keep your modal buttons clean (no bottom "stripe") */
+ .modal .btn--primary{
+  box-shadow:none;
+ }
+ 
+ 
+ .modal__close{
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border:1px solid #e5e7eb;
+  border-radius:999px;
+  background:rgba(249,250,251,.95);
+  color:#111827;
+  font-size:18px;
+  line-height:1;
+  cursor:pointer;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease;
+ }
+ 
+ 
+ .modal__close:hover{
+  background:#fff;
+  border-color:#cbd5e1;
+  box-shadow:0 8px 20px rgba(17,24,39,.12);
+ }
+ 
+ 
+ .modal__close:active{
+  transform:translateY(1px);
+ }
+ 
+ 
+ .modal__close:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
+  border-color: color-mix(in oklab, var(--accent), #fff 30%);
+ }
+ 
+ 
+ .auth-link{
+  background:none;
+  border:none;
+  padding:0;
+  margin-top:10px;
+  color: var(--accent);
+  font-weight:600;
+  font-size:14px;
+  line-height:1.2;
+  cursor:pointer;
+  text-decoration:none;
+  transition: opacity .15s ease, transform .02s ease;
+ }
+ 
+ 
+ .auth-link:hover{
+  text-decoration:underline;
+  text-underline-offset:3px;
+ }
+ 
+ 
+ .auth-link:active{
+  transform:translateY(1px);
+ }
+ 
+ 
+ .auth-link:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
+  border-radius:8px;
+  padding:4px 8px;
+  margin-top:6px;
+ }
+ 
+ 
+ .seo.seo--rich{
+   margin-top: 8px;
+   padding-top: 6px;
+   color: var(--text);
+ }
+ 
+ .seo.seo--rich h2{
+   margin: 0 0 10px;
+   font-size: 1.25rem;
+   letter-spacing: .2px;
+ }
+ 
+ .seo.seo--rich h3{
+   margin: 18px 0 8px;
+   font-size: 1.05rem;
+   letter-spacing: .15px;
+ }
+ 
+ .seo.seo--rich p{
+   margin: 10px 0;
+   color: var(--text);
+   max-width: 80ch;
+ }
+ 
+ .seo.seo--rich ul{
+   margin: 10px 0 12px;
+   padding-left: 18px;
+   display: grid;
+   gap: 8px;
+   max-width: 80ch;
+ }
+ 
+ .seo.seo--rich li{
+   color: var(--text);
+ }
+ 
+ .seo-checklist{
+   list-style: none;
+   padding-left: 0;
+ }
+ 
+ .seo-checklist li{
+   position: relative;
+   padding-left: 26px;
+ }
+ 
+ .seo-checklist li::before{
+   content: "✓";
+   position: absolute;
+   left: 0;
+   top: 0;
+   color: var(--accent);
+   font-weight: 800;
+ }
+ 
+ .seo-tool-slot{
+   margin-top: 14px;
+   padding: 12px 14px;
+   border: 1px dashed color-mix(in oklab, var(--accent), var(--border) 55%);
+   border-radius: 12px;
+   background: color-mix(in oklab, var(--accent), #fff 92%);
+   color: color-mix(in oklab, var(--accent), #000 35%);
+   font-weight: 600;
+   max-width: 80ch;
+ }
+ 
+ 
+ #text-editor .error {
+   display: inline-block;
+   cursor: pointer;
+   border-radius: 3px;
+   padding: 0 2px;
+   background: rgba(239, 68, 68, 0.18);
+   box-shadow: inset 0 -2px 0 rgba(239, 68, 68, 0.95);
+   text-decoration: none;
+ }
+ 
+
+ .feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feature-list .check {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.feature-list .check::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 
-.modal.active{
- display: flex;        /* ONLY show when active */
- align-items: center;
- justify-content: center;
+ 
+ /* --- FORCE MAIN CONTENT CENTERING (SAFE, NON-DESTRUCTIVE) --- */
+ main,
+ main > .wrap,
+ body > .wrap{
+   margin-inline: auto;
+ }
+
+
+ .auth-error{
+  width: 450px;          /* same as inputs/buttons */
+  max-width: 100%;
+  margin: 12px auto 0;   /* centers it like the inputs */
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 12px;   /* match your input rounding */
+  padding: 12px 14px;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+/* ===== Payment Modal (scoped) ===== */
+:root {
+  --pm-overlay: rgba(17, 24, 39, 0.6);
+  --pm-bg: #ffffff;
+  --pm-text: #0f172a;
+  --pm-muted: #475569;
+
+  /* BRAND COLORS HERE */
+  --pm-primary: #057e6f;
+  --pm-primary-hover: #04695d;
+
+  --pm-ring: 0 0 0 3px rgba(5, 126, 111, 0.30);
+  --pm-radius: 14px;
+  --pm-shadow: 0 12px 40px rgba(2, 6, 23, 0.25);
+}
+
+.pay-modal[hidden] { display: none !important; }
+
+.pay-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  color: var(--pm-text);
+}
+
+.pay-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--pm-overlay);
+  backdrop-filter: blur(2px);
+}
+
+.pay-modal__content {
+  position: relative;
+  width: min(560px, 100%);
+  background: var(--pm-bg);
+  border-radius: var(--pm-radius);
+  box-shadow: var(--pm-shadow);
+  padding: 28px 24px 24px;
+  transform: translateY(10px);
+  opacity: 0;
+  animation: pm-in 220ms ease-out forwards;
+}
+
+.pay-modal__content--wide { max-width: 560px; }
+
+@keyframes pm-in {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.pay-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: #334155;
+  font-size: 24px;
+  line-height: 1;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.pay-modal__close:hover { background: #f1f5f9; }
+.pay-modal__close:focus-visible { outline: none; box-shadow: var(--pm-ring); }
+
+.pay-modal__badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pm-primary);
+  background: #e9f8f6;
+  border: 1px solid #b4e8df;
+  border-radius: 999px;
+}
+
+.pay-modal h2 {
+  margin: 4px 0 8px;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.pay-modal__subtext {
+  margin: 0 0 18px;
+  color: var(--pm-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.pay-modal__cta {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  background: var(--pm-primary);
+  color: #fff;
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 120ms ease, transform 60ms ease;
+  box-shadow: 0 8px 18px rgba(5,126,111,0.25);
+}
+.pay-modal__cta:hover { background: var(--pm-primary-hover); }
+.pay-modal__cta:active { transform: translateY(1px); }
+.pay-modal__cta:focus-visible { outline: none; box-shadow: var(--pm-ring); }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pay-modal__content { animation: none; opacity: 1; transform: none; }
+  .pay-modal__cta { transition: none; }
+}
+
+/* ===== FULL-WIDTH MAIN ON MOBILE ===== */
+@media (max-width: 640px) {
+
+/* Remove outer gutters */
+.wrap {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Remove card spacing */
+.card {
+  margin-left: 10px !important;
+  margin-right: 10px !important;
+  border-radius: 0 !important;
+}
+
+/* THIS fixes the remaining padding */
+.card__body {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+}
+
+/* ✅ Stop horizontal scroll on mobile */
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Safer on iOS/Chrome where weird elements cause wiggle */
+@media (max-width: 640px) {
+  body {
+    position: relative;
+  }
+
+  /* Clamp anything that might exceed the viewport */
+  img, svg, video, canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* If your editor or card can overflow due to long unbroken text */
+  .card, .card__body, .editor, .seo {
+    max-width: 100%;
+  }
+
+  /* Long words/URLs won’t force width */
+  .seo, .card__body, p, li, blockquote {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 
 
+/* =========================
+   Grammarly-style sidebar
+========================= */
 
-/* Make overlay cover full screen behind content */
-.modal__overlay{
- position: absolute;
- inset: 0;
- background: rgba(0,0,0,.45);
- backdrop-filter: blur(3px);
+.checker-sidebar__head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
 }
 
-
-/* Your sizing stays, just remove any margin-based centering */
-.modal__content{
- position: relative;
- max-width: 560px;
- width: 100%;
- padding: 30px 32px;
- border-radius: 16px;
- background: #fff;
- box-shadow: 0 20px 40px rgba(0,0,0,.2);
-}
-
-
-/* Center modal title + subtitle */
-.modal__content h2,
-.modal__content .sub{
- text-align: center;
-
-
-
-
-
-
-}
-
-
-.sub{
- margin-bottom: 30px;
-}
-
-
-.subheading{
- margin-bottom: 0px;
-}
-
-
-
-
-/* Layout */
-.auth-form{
- display:flex;
- flex-direction:column;
- align-items:center;
- gap: 20px;
-}
-
-
-/* spacing BETWEEN fields only */
-.auth-fields{
- display:flex;
- flex-direction:column;
- gap:14px;                 /* field spacing */
- width:100%;
- align-items:center;
-}
-
-
-/* spacing BETWEEN buttons only */
-.auth-actions{
- display:flex;
- flex-direction:column;
- gap:8px;                  /* button spacing */
- margin-top:14px;          /* gap between fields and buttons */
- width:100%;
- align-items:center;
-}
-
-
-/* shared width */
-.auth-fields input,
-.auth-actions .btn{
- width:450px;
- max-width:100%;
-}
-
-
-/* ✅ Modern input styling */
-.auth-fields input{
- appearance:none;
- -webkit-appearance:none;
-
-
- height:46px;
- padding:0 14px;
-
-
- border:1.5px solid #cbd5e1; /* clearer border */
- border-radius:12px;
-
-
- background:#f9fafb;
- color:var(--text);
-
-
- font-size:15px;
- line-height:1;
-
-
- outline:none;
- transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
-}
-
-
-.auth-fields input::placeholder{
- color:#6b7280;  /* darker / clearer placeholder */
- opacity: 1;     /* ensures full strength on some browsers */
-}
-
-
-
-
-.auth-fields input:focus{
- background:#fff;
- border-color: color-mix(in oklab, var(--accent), #fff 30%);
- box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
-}
-
-
-/* Optional: nicer autofill */
-.auth-fields input:-webkit-autofill{
- -webkit-text-fill-color: var(--text);
- box-shadow: 0 0 0 1000px #f9fafb inset;
- transition: background-color 9999s ease-out 0s;
-}
-.auth-fields input:-webkit-autofill:focus{
- box-shadow:
-   0 0 0 1000px #fff inset,
-   0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
-}
-
-
-/* Keep your modal buttons clean (no bottom "stripe") */
-.modal .btn--primary{
- box-shadow:none;
-}
-
-
-
-
-.modal__close{
- position:absolute;
- top:14px;
- right:14px;              /* ✅ right side of modal */
- width:38px;
- height:38px;
- display:grid;
- place-items:center;
-
-
- border:1px solid #e5e7eb;
- border-radius:999px;
- background:rgba(249,250,251,.95);
-
-
- color:#111827;
- font-size:18px;
- line-height:1;
- cursor:pointer;
-
-
- transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .02s ease;
-}
-
-
-.modal__close:hover{
- background:#fff;
- border-color:#cbd5e1;
- box-shadow:0 8px 20px rgba(17,24,39,.12);
-}
-
-
-.modal__close:active{
- transform:translateY(1px);
-}
-
-
-.modal__close:focus-visible{
- outline:none;
- box-shadow:0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
- border-color: color-mix(in oklab, var(--accent), #fff 30%);
-}
-
-
-
-
-.auth-link{
- background:none;
- border:none;
- padding:0;
- margin-top:10px;
-
-
- color: var(--accent);
- font-weight:600;
- font-size:14px;
- line-height:1.2;
-
-
- cursor:pointer;
- text-decoration:none;
- transition: opacity .15s ease, transform .02s ease;
-}
-
-
-.auth-link:hover{
- text-decoration:underline;
- text-underline-offset:3px;
-}
-
-
-.auth-link:active{
- transform:translateY(1px);
-}
-
-
-.auth-link:focus-visible{
- outline:none;
- box-shadow:0 0 0 4px color-mix(in oklab, var(--accent), #fff 82%);
- border-radius:8px;
- padding:4px 8px; /* gives the focus ring some area */
- margin-top:6px;
-}
-
-
-.seo.seo--rich{
-  margin-top: 8px;
-  padding-top: 6px;
-  color: var(--text);
-}
-
-.seo.seo--rich h2{
-  margin: 0 0 10px;
-  font-size: 1.25rem;
+.checker-sidebar__title{
+  font-weight: 800;
   letter-spacing: .2px;
 }
 
-.seo.seo--rich h3{
-  margin: 18px 0 8px;
-  font-size: 1.05rem;
-  letter-spacing: .15px;
+.checker-sidebar__sub{
+  margin-top: 2px;
+  font-size: 13px;
+  color: color-mix(in oklab, var(--text), #fff 35%);
 }
 
-.seo.seo--rich p{
-  margin: 10px 0;
-  color: var(--text);
-  max-width: 80ch;
+.checker-sidebar__count{
+  min-width: 34px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  border: 1px solid color-mix(in oklab, var(--accent), #fff 60%);
+  background: color-mix(in oklab, var(--accent), #fff 92%);
+  color: color-mix(in oklab, var(--accent), #000 22%);
 }
 
-.seo.seo--rich ul{
-  margin: 10px 0 12px;
-  padding-left: 18px;
+.checker-sidebar__empty{
+  font-size: 14px;
+  color: color-mix(in oklab, var(--text), #fff 35%);
+  padding: 10px 2px;
+}
+
+.checker-sidebar__list{
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.s-item{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.s-item.is-active{
+  border-color: color-mix(in oklab, var(--accent), #fff 45%);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), #fff 82%);
+}
+
+.s-jump{
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.s-line{
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.s-bad{
+  font-weight: 800;
+  color: #991b1b;
+}
+
+.s-arrow{
+  opacity: .7;
+}
+
+.s-good{
+  font-weight: 800;
+  color: #065f46;
+}
+
+.s-actions{
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.s-btn{
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.s-btn:hover{
+  background: #f8fafc;
+}
+
+.s-btn--primary{
+  border-color: color-mix(in oklab, var(--accent), #fff 55%);
+  background: color-mix(in oklab, var(--accent), #fff 92%);
+  color: color-mix(in oklab, var(--accent), #000 22%);
+}
+
+/* Highlight active error in editor */
+#text-editor .error.is-active{
+  box-shadow:
+    inset 0 -2px 0 rgba(239, 68, 68, 0.95),
+    0 0 0 3px color-mix(in oklab, var(--accent), #fff 82%);
+}
+
+
+/* =========================
+   WIDER MAIN LAYOUT (LESS SIDE WHITESPACE)
+   Paste at the VERY bottom of your <style>
+========================= */
+
+/* 1) Make the whole page container much wider */
+:root{
+  --page-max: 1700px;          /* adjust: 1400px–2000px */
+  --page-gutter: 24px;         /* side padding */
+}
+
+/* Your main outer container */
+.wrap{
+  width: min(var(--page-max), 96vw) !important;
+  max-width: var(--page-max) !important;
+  margin-inline: auto !important;
+  padding-inline: var(--page-gutter) !important;
+}
+
+/* Make the card stop being "narrow" */
+.card{
+  width: 100% !important;
+  max-width: none !important;
+  margin-inline: auto !important;
+}
+
+/* Slightly reduce the "boxed" feel (optional but helps fill screen) */
+.card__body{
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* 2) Give the editor + sidebar more room on wide screens */
+@media (min-width: 1100px){
+  .checker-layout{
+    grid-template-columns: minmax(0, 1fr) 420px; /* wider sidebar */
+    gap: 22px;
+  }
+}
+
+/* 3) Your SEO section currently limits line width (80ch).
+      This makes it use the new wider layout too. */
+@media (min-width: 1100px){
+  .seo.seo--rich p,
+  .seo.seo--rich ul{
+    max-width: none !important;
+  }
+}
+
+
+/* ✅ Keep editor height EXACTLY the same (never grow) */
+#text-editor.editor{
+  height: 425px !important;
+  min-height: 425px !important;
+  max-height: 425px !important;
+
+  overflow-y: auto !important;   /* scroll inside editor */
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
+
+
+
+
+
+/* =========================
+   ✅ Sidebar: Tekstkvalitet
+========================= */
+.quality-summary{
+  margin: 12px 0 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--accent), #fff 94%);
+}
+
+.quality-summary__title{
+  font-weight: 800;
+  letter-spacing: .2px;
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: color-mix(in oklab, var(--text), #000 10%);
+}
+
+.quality-summary__grid{
   display: grid;
   gap: 8px;
-  max-width: 80ch;
 }
 
-.seo.seo--rich li{
-  color: var(--text);
-}
-
-.seo-checklist{
-  list-style: none;
-  padding-left: 0;
-}
-
-.seo-checklist li{
-  position: relative;
-  padding-left: 26px;
-}
-
-.seo-checklist li::before{
-  content: "✓";
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: var(--accent);
-  font-weight: 800;
-}
-
-.seo-tool-slot{
-  margin-top: 14px;
-  padding: 12px 14px;
-  border: 1px dashed color-mix(in oklab, var(--accent), var(--border) 55%);
+.qs-item{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid color-mix(in oklab, var(--border), #000 5%);
   border-radius: 12px;
-  background: color-mix(in oklab, var(--accent), #fff 92%);
-  color: color-mix(in oklab, var(--accent), #000 35%);
-  font-weight: 600;
-  max-width: 80ch;
+  background: #fff;
+}
+
+.qs-label{
+  font-size: 13px;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--text), #fff 20%);
+}
+
+.qs-count{
+  min-width: 36px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+/* Subtle severity colors */
+.qs-count--serious{
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.10);
+  color: #991b1b;
+}
+.qs-count--small{
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;
+}
+.qs-count--improve{
+  border-color: rgba(5, 150, 105, 0.30);
+  background: rgba(5, 150, 105, 0.10);
+  color: #065f46;
 }
 
 
-#text-editor .error {
-  display: inline-block;   /* ← REQUIRED for contenteditable */
-  
+
+.checker-layout{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+/* Left column stacks hero + tool */
+.checker-left{
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* Keep existing behavior */
+.checker-main{
+  min-width: 0;
+}
+
+/* Right column (make it scroll instead of stretching the grid) */
+.checker-sidebar{
+  position: sticky;
+  top: 18px;
+  align-self: start;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+  min-height: 220px;
+
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Responsive: stack sidebar under tool */
+@media (max-width: 980px){
+  .checker-layout{
+    grid-template-columns: 1fr;
+  }
+
+  .checker-sidebar{
+    position: relative;
+    top: 0;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+
+/* Responsive: stack hero + tool + sidebar */
+@media (max-width: 980px){
+  .checker-layout{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "hero"
+      "tool"
+      "sidebar";
+  }
+
+  .checker-sidebar{
+    position: relative;
+    top: 0;
+  }
+}
+
+
+.checker-hero{
+  padding: 14px 20px;
+  background: #f8fafc;          /* very light neutral grey */
+  border-radius: 12px;
+}
+
+
+
+
+
+
+
+
+/* =========================
+   ✅ Modern tooltip popover
+========================= */
+.tooltip-portal{
+  position: fixed;
+  z-index: 1200;
+  display: none;
+  width: min(360px, calc(100vw - 20px));
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(2, 6, 23, 0.22);
+  padding: 12px;
+  transform-origin: top center;
+}
+
+.tooltip-portal.visible{
+  display: block;
+  animation: tcTipIn 140ms ease-out;
+}
+
+@keyframes tcTipIn{
+  from{ opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  to{ opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Optional little “arrow” */
+.tooltip-portal::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+}
+.tooltip-portal.is-above::after{ bottom: -6px; }
+.tooltip-portal.is-below::after{ top: -6px; }
+
+/* Tooltip layout */
+.tooltip-portal .tc-tip{
+  display: grid;
+  gap: 10px;
+}
+
+.tooltip-portal .tc-tip__top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tooltip-portal .tc-tip__close{
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
   cursor: pointer;
-  border-radius: 3px;
-  padding: 0 2px;
+  font-size: 18px;
+  line-height: 1;
+  color: color-mix(in oklab, var(--text), #fff 35%);
+}
+.tooltip-portal .tc-tip__close:hover{
+  background: #f8fafc;
+}
 
-  background: rgba(239, 68, 68, 0.18);
-  box-shadow: inset 0 -2px 0 rgba(239, 68, 68, 0.95);
+/* Badge */
+.tooltip-portal .tc-badge{
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .15px;
+  border: 1px solid transparent;
+}
 
-  text-decoration: none;
+.tooltip-portal .tc-badge--serious{
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.tooltip-portal .tc-badge--error{
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+.tooltip-portal .tc-badge--improve{
+  color: #065f46;
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(5, 150, 105, 0.24);
+}
+
+/* Replacement row */
+.tooltip-portal .tc-tip__row{
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.tooltip-portal .tc-tip__from{
+  font-weight: 800;
+  color: #991b1b;
+}
+.tooltip-portal .tc-tip__arrow{
+  opacity: .6;
+}
+.tooltip-portal .tc-tip__to{
+  font-weight: 900;
+  color: #065f46;
+}
+
+/* Buttons */
+.tooltip-portal .tc-tip__actions{
+  display: flex;
+  gap: 10px;
+}
+
+.tooltip-portal .tc-tip__btn{
+  appearance: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tooltip-portal .tc-tip__btn:hover{
+  background: #f8fafc;
+}
+
+.tooltip-portal .tc-tip__btn--primary{
+  border-color: color-mix(in oklab, var(--accent), #fff 55%);
+  background: color-mix(in oklab, var(--accent), #fff 92%);
+  color: color-mix(in oklab, var(--accent), #000 22%);
+}
+
+/* =========================
+   ✅ Sidebar badge pill
+========================= */
+.s-pill{
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid transparent;
+  margin-bottom: 8px;
+}
+
+.s-pill--serious{
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.22);
+}
+.s-pill--error{
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.s-pill--improve{
+  color: #065f46;
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(5, 150, 105, 0.22);
 }
 
 
-</style>
+.checker-sidebar__locked{
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.checker-sidebar__locked p{
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.checker-sidebar__locked .btn{
+  margin-top: 12px;
+}
 
 
 
-<script src="{% static 'checker/main.js' %}"></script>
+/* =========================
+   🔒 Anonymous blur lock (sidebar + tooltip)
+========================= */
+
+.s-item.is-locked .s-good {
+  position: relative;
+}
+
+/* Blur ONLY the corrected (green) word */
+.s-item.is-locked .s-good__text {
+  filter: blur(6px);
+  opacity: 0.95;
+  user-select: none;
+}
+
+/* Subtle overlay to make it feel “pro” */
+.s-item.is-locked .s-good::after {
+  content: "";
+  position: absolute;
+  inset: -2px -4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+/* Small helper text under the row (optional but nice) */
+.s-locknote {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tooltip blur (so anon can’t see it there either) */
+.tc-tip__to--blur {
+  filter: blur(6px);
+  opacity: 0.95;
+  user-select: none;
+  position: relative;
+}
+
+.tc-tip__to--blur::after {
+  content: "";
+  position: absolute;
+  inset: -2px -4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+
+
+ </style>
+
+
 
 
 <script>
- // Login modal
- const authModal = document.getElementById("auth-modal");
- const authClose = document.getElementById("auth-close");
+  (function () {
+    console.log("✅ main.js loaded");
+    document.addEventListener("click", (e) => {
+      // console.log("🌍 GLOBAL CLICK:", e.target);
+      // ✅ TOOLTIP CLOSE HANDLERS (CORRECT SCOPE)
 
+// Outside click
+document.addEventListener("mousedown", (e) => {
+  if (!tooltip?.classList.contains("visible")) return;
 
- // Register modal
- const registerModal = document.getElementById("register-modal");
- const registerClose = document.getElementById("register-close");
+  const onTooltip = e.target.closest(".tooltip-portal");
+  const onError = e.target.closest("#text-editor .error");
 
+  if (!onTooltip && !onError) {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+  }
+}, true);
 
- // Switch buttons
- const openRegisterBtn = document.getElementById("open-register");
- const openLoginBtn = document.getElementById("open-login");
+// Close button
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".tooltip-portal .tc-tip__close")) {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+  }
+});
 
+// ESC key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+  }
+});
 
- function openAuthModal(){
-   authModal.classList.add("active");
-   authModal.setAttribute("aria-hidden", "false");
- }
+// Scroll / resize
+window.addEventListener("scroll", () => {
+  if (tooltip?.classList.contains("visible")) {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+  }
+}, { passive: true });
 
+window.addEventListener("resize", () => {
+  if (tooltip?.classList.contains("visible")) {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+  }
+});
 
- function closeAuthModal(){
-   authModal.classList.remove("active");
-   authModal.setAttribute("aria-hidden", "true");
- }
+    });
+  
+    const MAX_WORDS = 800;
+  
+    function countWords(text) {
+      return (text.trim().match(/\S+/g) || []).length;
+    }
+  
+    const $ = (s, scope = document) => scope.querySelector(s);
+  
+    const editor   = $("#text-editor");
+    const wordsEl  = $("#words");
+    const charsEl  = $("#chars");
+    const form     = $("#form");
+    const submit   = $("#submit");
+    const clearBtn = $("#clear");
+  
+    // Sidebar elements
+    const suggestionsList  = $("#suggestions-list");
+    const suggestionsCount = $("#suggestions-count");
+    const suggestionsEmpty = $("#suggestions-empty");
 
+    // ✅ NEW: Quality summary elements
+const qualityWrap = $("#quality-summary");
+const qsSerious = $("#qs-serious");
+const qsSmall   = $("#qs-small");
+const qsImprove = $("#qs-improve");
 
- function openRegisterModal(){
- closeAuthModal();
- registerModal.classList.add("active");
- registerModal.setAttribute("aria-hidden", "false");
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 
- function closeRegisterModal(){
-   registerModal.classList.remove("active");
-   registerModal.setAttribute("aria-hidden", "true");
- }
+const suggestionsLocked = document.getElementById("suggestions-locked");
 
 
- // Close handlers
- authClose?.addEventListener("click", closeAuthModal);
- authModal?.querySelector(".modal__overlay")?.addEventListener("click", closeAuthModal);
+function hasTriggeredPaymentGate() {
+  return sessionStorage.getItem("tc_payment_gate_triggered") === "1";
+}
+
+function forceCloseTooltip() {
+  const tp = window.__tcTooltip;
+  if (!tp) return;
+
+  tp.classList.remove("visible");
+  tp.style.display = "none";
+  tp.style.visibility = "hidden";
+  tp.innerHTML = "";
+
+  window.activeError = null;
+}
+
+// ✅ expose globally
+window.forceCloseTooltip = forceCloseTooltip;
 
 
- registerClose?.addEventListener("click", closeRegisterModal);
- registerModal?.querySelector(".modal__overlay")?.addEventListener("click", closeRegisterModal);
+function triggerPaymentGate() {
+  sessionStorage.setItem("tc_payment_gate_triggered", "1");
+}
 
 
- // Switch between modals
- openRegisterBtn?.addEventListener("click", () => {
-   closeAuthModal();
-   openRegisterModal();
- });
+function lockSidebarForAuth() {
+  // Hide real content
+  if (suggestionsList) suggestionsList.innerHTML = "";
+  if (suggestionsEmpty) suggestionsEmpty.hidden = true;
+  if (qualityWrap) qualityWrap.hidden = true;
+  if (suggestionsCount) suggestionsCount.textContent = "0";
+
+  // Show locked message
+  if (suggestionsLocked) suggestionsLocked.hidden = false;
+}
+
+function lockSidebarForPayment() {
+  if (suggestionsList) suggestionsList.innerHTML = "";
+  if (suggestionsEmpty) {
+    suggestionsEmpty.hidden = false;
+    suggestionsEmpty.innerHTML =
+      "Full tilgang krever abonnement. Start gratis prøve for å fortsette.";
+  }
+  if (qualityWrap) qualityWrap.hidden = true;
+  if (suggestionsCount) suggestionsCount.textContent = "0";
+}
 
 
- openLoginBtn?.addEventListener("click", () => {
- closeRegisterModal();
- openAuthModal();
+function unlockSidebar() {
+  if (suggestionsLocked) suggestionsLocked.hidden = true;
+}
+
+
+function computeQualityCounts(wordCount) {
+  // If empty text, show nothing
+  if (!wordCount || wordCount <= 0) {
+    return { serious: 0, small: 0, improve: 0, show: false };
+  }
+
+  // 1–150 words
+  if (wordCount <= 150) {
+    return {
+      serious: randInt(2, 4),
+      small: 5,
+      improve: 2,
+      show: true
+    };
+  }
+
+  // >150 words
+  return {
+    serious: randInt(4, 8),
+    small: randInt(8, 10),
+    improve: 4,
+    show: true
+  };
+}
+
+function hideQualitySummary() {
+  if (qualityWrap) qualityWrap.hidden = true;
+  if (qsSerious) qsSerious.textContent = "0";
+  if (qsSmall) qsSmall.textContent = "0";
+  if (qsImprove) qsImprove.textContent = "0";
+}
+
+function showQualitySummaryForText(text) {
+  const wc = countWords(text || "");
+  const q = computeQualityCounts(wc);
+
+  if (!qualityWrap || !qsSerious || !qsSmall || !qsImprove) return;
+
+  if (!q.show) {
+    hideQualitySummary();
+    return;
+  }
+
+  qsSerious.textContent = String(q.serious);
+  qsSmall.textContent   = String(q.small);
+  qsImprove.textContent = String(q.improve);
+  qualityWrap.hidden = false;
+}
+
+function syncTotalSuggestionsFromQuality() {
+  if (!suggestionsCount || !qsSerious || !qsSmall || !qsImprove) return;
+
+  const total =
+    Number(qsSerious.textContent || 0) +
+    Number(qsSmall.textContent || 0) +
+    Number(qsImprove.textContent || 0);
+
+  suggestionsCount.textContent = String(total);
+}
+
+  
+    const errorEl = document.getElementById("length-error");
+  
+    if (!editor || !form) return;
+  
+    let lastPlainText = "";
+    let activeError = null;
+
+    // ===============================
+// ✅ Persist/restore highlighted state across login reload
+// ===============================
+const TC_STATE = {
+  editorHTML: "tc_editor_html",
+  sidebarHTML: "tc_sidebar_html",
+  sidebarCount: "tc_sidebar_count",
+  sidebarEmptyHidden: "tc_sidebar_empty_hidden",
+  sidebarEmptyHTML: "tc_sidebar_empty_html",
+  scrollY: "tc_scroll_y",
+  qualityHidden: "tc_quality_hidden",
+  qsSerious: "tc_qs_serious",
+  qsSmall: "tc_qs_small",
+  qsImprove: "tc_qs_improve",
+};
+
+function persistHighlightedState() {
+  try {
+    // Save current view (spans + remaining suggestions)
+    sessionStorage.setItem(TC_STATE.editorHTML, editor?.innerHTML || "");
+    sessionStorage.setItem(TC_STATE.sidebarHTML, suggestionsList?.innerHTML || "");
+    sessionStorage.setItem(TC_STATE.sidebarCount, suggestionsCount?.textContent || "0");
+
+    if (suggestionsEmpty) {
+      sessionStorage.setItem(TC_STATE.sidebarEmptyHidden, suggestionsEmpty.hidden ? "1" : "0");
+      sessionStorage.setItem(TC_STATE.sidebarEmptyHTML, suggestionsEmpty.innerHTML || "");
+    }
+
+    // Save quality summary (optional)
+    if (qualityWrap) {
+      sessionStorage.setItem(TC_STATE.qualityHidden, qualityWrap.hidden ? "1" : "0");
+      sessionStorage.setItem(TC_STATE.qsSerious, qsSerious?.textContent || "0");
+      sessionStorage.setItem(TC_STATE.qsSmall, qsSmall?.textContent || "0");
+      sessionStorage.setItem(TC_STATE.qsImprove, qsImprove?.textContent || "0");
+    }
+
+    // Also keep plaintext + scroll position
+    sessionStorage.setItem("tc_text", getPlainText());
+    sessionStorage.setItem(TC_STATE.scrollY, String(window.scrollY || 0));
+  } catch (e) {
+    // ignore storage issues
+  }
+}
+
+
+
+function resetAllCorrectionNumbersToZero() {
+  // Sidebar list + empty text
+  if (suggestionsList) suggestionsList.innerHTML = "";
+  setSidebarEmpty("Ingen feil igjen 🎉");
+
+  // Tekstkvalitet counts -> 0 (and keep panel visible if you want to show zeros)
+  if (qsSerious) qsSerious.textContent = "0";
+  if (qsSmall)   qsSmall.textContent = "0";
+  if (qsImprove) qsImprove.textContent = "0";
+
+  // Show the panel with zeros (optional)
+  if (qualityWrap) qualityWrap.hidden = false;
+
+  // Total suggestions -> 0
+  if (suggestionsCount) suggestionsCount.textContent = "0";
+}
+
+function maybeResetNumbersIfNoHighlightsLeft() {
+  const remainingHighlights = editor?.querySelectorAll(".error").length || 0;
+
+  if (remainingHighlights === 0) {
+    resetAllCorrectionNumbersToZero();
+    // Save the zero state so reload/login doesn't bring old numbers back
+    persistHighlightedState();
+  }
+}
+
+
+
+function clearHighlightedState() {
+  try {
+    Object.values(TC_STATE).forEach((k) => sessionStorage.removeItem(k));
+    // (we keep tc_text sometimes, but when user edits/clears we remove it below)
+  } catch (e) {}
+}
+
+function restoreHighlightedState() {
+  const savedEditorHTML = sessionStorage.getItem(TC_STATE.editorHTML);
+  const savedSidebarHTML = sessionStorage.getItem(TC_STATE.sidebarHTML);
+
+  // Must have editorHTML to restore "highlight mode"
+  if (!savedEditorHTML) return false;
+
+  // Restore editor + sidebar
+  editor.innerHTML = savedEditorHTML;
+  if (suggestionsList && savedSidebarHTML !== null) {
+    suggestionsList.innerHTML = savedSidebarHTML;
+  }
+
+  // Restore empty state
+  if (suggestionsEmpty) {
+    const hidden = sessionStorage.getItem(TC_STATE.sidebarEmptyHidden);
+    const emptyHTML = sessionStorage.getItem(TC_STATE.sidebarEmptyHTML);
+    if (hidden !== null) suggestionsEmpty.hidden = hidden === "1";
+    if (emptyHTML !== null && emptyHTML !== "") suggestionsEmpty.innerHTML = emptyHTML;
+  }
+
+  // Restore counts (or recompute)
+  if (suggestionsCount) {
+    const c = sessionStorage.getItem(TC_STATE.sidebarCount);
+    syncTotalSuggestionsFromQuality();
+  }
+
+  // Restore quality summary
+  if (qualityWrap && qsSerious && qsSmall && qsImprove) {
+    const qHidden = sessionStorage.getItem(TC_STATE.qualityHidden);
+    if (qHidden !== null) qualityWrap.hidden = (qHidden === "1");
+    qsSerious.textContent = sessionStorage.getItem(TC_STATE.qsSerious) || "0";
+    qsSmall.textContent   = sessionStorage.getItem(TC_STATE.qsSmall) || "0";
+    qsImprove.textContent = sessionStorage.getItem(TC_STATE.qsImprove) || "0";
+  } else {
+    // fallback if not stored
+    showQualitySummaryForText(getPlainText());
+  }
+
+  // Re-sync text + counters
+  lastPlainText = getPlainText();
+  sessionStorage.setItem("tc_text", lastPlainText);
+  updateCounts(lastPlainText);
+  enforceLengthLimit(lastPlainText);
+
+  // Restore scroll (nice UX)
+  const y = Number(sessionStorage.getItem(TC_STATE.scrollY) || 0);
+  requestAnimationFrame(() => window.scrollTo(0, y));
+
+  // Make sure tooltip/active markers are reset
+  clearActiveStates();
+  hideTooltip();
+  activeError = null;
+
+
+  applyLockToUI();
+  return true;
+}
+
+  
+    // 🔐 Free usage gating
+    let appliedCorrections = Number(
+      sessionStorage.getItem("appliedCorrections") || 0
+    );
+
+    // ===============================
+// 🔒 Progressive lock after 1 free correction
+// ===============================
+const LOCK_KEYS = {
+  authLocked: "tc_auth_locked",   // blur after closing auth modal
+  payLocked:  "tc_pay_locked",    // blur after closing pay modal
+  pending:    "tc_lock_pending",  // "auth" | "pay"
+};
+
+// If user is already unlocked, clear any stale locks
+if (window.IS_AUTHENTICATED) sessionStorage.removeItem(LOCK_KEYS.authLocked);
+if (window.IS_PAYING)        sessionStorage.removeItem(LOCK_KEYS.payLocked);
+
+function isAuthLocked() {
+  return sessionStorage.getItem(LOCK_KEYS.authLocked) === "1";
+}
+function isPayLocked() {
+  return sessionStorage.getItem(LOCK_KEYS.payLocked) === "1";
+}
+
+// Returns: "auth" | "pay" | null
+function getLockMode() {
+  if (!window.IS_AUTHENTICATED) return isAuthLocked() ? "auth" : null;
+  if (window.IS_AUTHENTICATED && !window.IS_PAYING) return isPayLocked() ? "pay" : null;
+  return null;
+}
+
+function setPendingLock(kind) {
+  sessionStorage.setItem(LOCK_KEYS.pending, kind);
+}
+
+function applyPendingLock() {
+  const kind = sessionStorage.getItem(LOCK_KEYS.pending);
+  sessionStorage.removeItem(LOCK_KEYS.pending);
+
+  if (kind === "auth" && !window.IS_AUTHENTICATED) {
+    sessionStorage.setItem(LOCK_KEYS.authLocked, "1");
+  }
+  if (kind === "pay" && window.IS_AUTHENTICATED && !window.IS_PAYING) {
+    sessionStorage.setItem(LOCK_KEYS.payLocked, "1");
+  }
+  applyLockToUI();
+}
+
+function clearLocks() {
+  sessionStorage.removeItem(LOCK_KEYS.authLocked);
+  sessionStorage.removeItem(LOCK_KEYS.payLocked);
+  sessionStorage.removeItem(LOCK_KEYS.pending);
+  applyLockToUI();
+}
+
+function applyLockToUI() {
+  const mode = getLockMode(); // auth/pay/null
+
+  const noteText =
+    mode === "auth"
+      ? "Opprett konto for å låse opp forslaget"
+      : "Start gratis prøve for å låse opp forslaget";
+
+  const lockedBtnText =
+    mode === "auth"
+      ? "Opprett konto for å se rettelser"
+      : "Start gratis prøve for å se korreksjoner";
+
+  const lockedBtnAttr =
+    mode === "auth" ? "data-unlock-auth" : "data-unlock-pay";
+
+  suggestionsList?.querySelectorAll(".s-item").forEach((li) => {
+    li.classList.toggle("is-locked", !!mode);
+
+    // lock note
+   
+
+    // ✅ NEW: swap action buttons depending on lock mode
+    const actions = li.querySelector(".s-actions");
+    if (actions) {
+      if (mode) {
+        actions.innerHTML = `
+          <button type="button" class="s-btn s-btn--primary" ${lockedBtnAttr}>
+            ${escapeHTML(lockedBtnText)}
+          </button>
+        `;
+      } else {
+        actions.innerHTML = `
+          <button type="button" class="s-btn s-btn--primary" data-apply>Bruk</button>
+          <button type="button" class="s-btn" data-dismiss>Avvis</button>
+        `;
+      }
+    }
+  });
+
+  // Tooltip blur/unblur
+  const tp = window.__tcTooltip;
+  const toEl = tp?.querySelector(".tc-tip__to");
+  if (toEl) {
+    toEl.classList.toggle("tc-tip__to--blur", !!mode);
+  }
+
+  // ✅ NEW: swap tooltip buttons too (if tooltip is open)
+  const tpActions = tp?.querySelector(".tc-tip__actions");
+  if (tpActions) {
+    if (mode) {
+      const cls = mode === "auth" ? "unlock-auth" : "unlock-pay";
+      tpActions.innerHTML = `
+        <button type="button" class="tc-tip__btn tc-tip__btn--primary ${cls}">
+          ${escapeHTML(lockedBtnText)}
+        </button>
+      `;
+    } else {
+      tpActions.innerHTML = `
+        <button type="button" class="tc-tip__btn tc-tip__btn--primary apply">Bruk</button>
+        <button type="button" class="tc-tip__btn dismiss">Avvis</button>
+      `;
+    }
+  }
+}
+
+
+// Expose for modal close handlers (outside the IIFE)
+window.__tcApplyPendingLock = applyPendingLock;
+window.__tcClearLocks = clearLocks;
+window.__tcApplyLockToUI = applyLockToUI;
+
+  
+    /* -------------------------------
+       TEXT HELPERS
+    --------------------------------*/
+    function escapeHTML(str) {
+      return (str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  
+    function htmlWithNewlines(str) {
+      return escapeHTML(str).replace(/\n/g, "<br>");
+    }
+  
+    function getPlainText() {
+      return (editor.innerText || "").replace(/\u00A0/g, " ");
+    }
+  
+    function updateCounts(text) {
+      const t = text || "";
+      wordsEl.textContent = (t.trim().match(/\S+/g) || []).length;
+      charsEl.textContent = t.length;
+    }
+  
+    function enforceLengthLimit(text) {
+      const wordCount = countWords(text);
+      const tooLong = wordCount > MAX_WORDS;
+  
+      submit.disabled = tooLong;
+      submit.classList.toggle("is-disabled", tooLong);
+  
+      editor.classList.toggle("is-too-long", tooLong);
+  
+      if (errorEl) {
+        errorEl.hidden = !tooLong;
+        errorEl.textContent =
+          "Teksten er for lang. Du kan rette maks 800 ord om gangen.";
+      }
+    }
+  
+    /* -------------------------------
+       WORD-LEVEL DIFF
+    --------------------------------*/
+    function tokenizeWords(text) {
+      const tokens = [];
+      // include optional punctuation as part of the "word"
+      const regex = /\p{L}+[.,;:!?]?/gu;
+      let match;
+  
+      while ((match = regex.exec(text))) {
+        tokens.push({
+          word: match[0],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+      return tokens;
+    }
+  
+    function getWordDiffs(original, corrected) {
+  const oWords = tokenizeWords(original);
+  const cWords = tokenizeWords(corrected);
+
+  const diffs = [];
+  const len = Math.min(oWords.length, cWords.length);
+
+  for (let i = 0; i < len; i++) {
+    if (oWords[i].word !== cWords[i].word) {
+      const id = String(diffs.length);
+      const badge = pickBadge(oWords[i].word, cWords[i].word, id);
+
+      diffs.push({
+        id,
+        start: oWords[i].start,
+        end: oWords[i].end,
+        original: oWords[i].word,
+        suggestion: cWords[i].word,
+        badgeKey: badge.key,
+        badgeText: badge.text,
+      });
+    }
+  }
+  return diffs;
+}
+
+
+    // ✅ Random-looking but stable badge per error (doesn't change each click)
+const BADGES = [
+  { key: "serious", text: "Alvorlig feil" },
+  { key: "error",   text: "Feil" },
+  { key: "improve", text: "Forbedring" }, // this one is fine in Norwegian
+
+];
+
+function stableHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function pickBadge(original, suggestion, id) {
+  const idx = stableHash(`${id}|${original}|${suggestion}`) % BADGES.length;
+  return BADGES[idx];
+}
+
+  
+    /* -------------------------------
+       RENDER HIGHLIGHTS
+    --------------------------------*/
+    function buildHighlightedHTML(text, diffs) {
+  if (!diffs.length) return htmlWithNewlines(text);
+
+  let html = "";
+  let last = 0;
+
+  for (const d of diffs) {
+    html += htmlWithNewlines(text.slice(last, d.start));
+    html += `<span class="error"
+      data-error-id="${escapeHTML(d.id)}"
+      data-original="${escapeHTML(d.original)}"
+      data-suggestion="${escapeHTML(d.suggestion)}"
+      data-badge="${escapeHTML(d.badgeKey || "error")}"
+      data-badge-text="${escapeHTML(d.badgeText || "Feil")}"
+    >${escapeHTML(d.original)}</span>`;
+    last = d.end;
+  }
+
+  html += htmlWithNewlines(text.slice(last));
+  return html;
+}
+
+    /* -------------------------------
+       SIDEBAR RENDER
+    --------------------------------*/
+    function setSidebarEmpty(message) {
+      if (!suggestionsEmpty) return;
+      suggestionsEmpty.hidden = false;
+      suggestionsEmpty.innerHTML = message;
+    }
+  
+    function hideSidebarEmpty() {
+      if (!suggestionsEmpty) return;
+      suggestionsEmpty.hidden = true;
+    }
+  
+    function updateSidebarCount() {
+  syncTotalSuggestionsFromQuality();
+}
+
+  
+function renderSuggestions(diffs) {
+  if (!suggestionsList || !suggestionsCount || !suggestionsEmpty) return;
+
+  if (!diffs.length) {
+    suggestionsList.innerHTML = "";
+    setSidebarEmpty("Ingen feil funnet 🎉");
+    if (suggestionsCount) suggestionsCount.textContent = "0";
+    return;
+  }
+
+  hideSidebarEmpty();
+
+  const lockMode = getLockMode(); // "auth" | "pay" | null
+  const isLocked = !!lockMode;
+
+
+
+  // ✅ NEW: button label when blurred/locked
+  const lockedBtnText =
+    lockMode === "auth"
+      ? "Opprett konto for å se rettelser"
+      : "Start gratis prøve for å se korreksjoner";
+
+  const lockedBtnAttr =
+    lockMode === "auth" ? "data-unlock-auth" : "data-unlock-pay";
+
+  const actionsLockedHTML = `
+    <div class="s-actions">
+      <button type="button" class="s-btn s-btn--primary" ${lockedBtnAttr}>
+        ${escapeHTML(lockedBtnText)}
+      </button>
+    </div>
+  `;
+
+  const actionsOpenHTML = `
+    <div class="s-actions">
+      <button type="button" class="s-btn s-btn--primary" data-apply>Bruk</button>
+      <button type="button" class="s-btn" data-dismiss>Avvis</button>
+    </div>
+  `;
+
+  suggestionsList.innerHTML = diffs.map(d => `
+    <li class="s-item ${isLocked ? "is-locked" : ""}" data-error-id="${escapeHTML(d.id)}">
+      <div class="s-pill s-pill--${escapeHTML(d.badgeKey || "error")}">${escapeHTML(d.badgeText || "Feil")}</div>
+
+      <button type="button" class="s-jump" data-jump>
+        <div class="s-line">
+          <span class="s-bad">${escapeHTML(d.original)}</span>
+          <span class="s-arrow">→</span>
+          <span class="s-good"><span class="s-good__text">${escapeHTML(d.suggestion)}</span></span>
+        </div>
+      </button>
+
+
+      ${isLocked ? actionsLockedHTML : actionsOpenHTML}
+    </li>
+  `).join("");
+
+  // Keep blur state consistent
+  applyLockToUI();
+}
+
+  
+    function clearSuggestionsUI() {
+  if (suggestionsList) suggestionsList.innerHTML = "";
+  if (suggestionsCount) suggestionsCount.textContent = "0";
+  setSidebarEmpty('Trykk <strong>Rett tekst</strong> for å se forslag her.');
+  hideQualitySummary(); // ✅ NEW
+}
+
+  
+    /* -------------------------------
+       TOOLTIP PORTAL (REUSE EXISTING)
+    --------------------------------*/
+    const tooltip = document.querySelector(".tooltip-portal");
+  
+    if (!tooltip) {
+      console.error("❌ tooltip-portal not found — it must be created in index.html");
+    } else {
+      console.log("✅ Reusing existing tooltip:", tooltip);
+    }
+  
+    window.__tcTooltip = tooltip;
+  
+    function clearActiveStates() {
+      editor.querySelectorAll(".error.is-active").forEach(el => el.classList.remove("is-active"));
+      suggestionsList?.querySelectorAll(".s-item.is-active").forEach(el => el.classList.remove("is-active"));
+    }
+  
+    function setActiveById(errorId) {
+      clearActiveStates();
+  
+      const span = editor.querySelector(`.error[data-error-id="${CSS.escape(errorId)}"]`);
+      span?.classList.add("is-active");
+  
+      const item = suggestionsList?.querySelector(`.s-item[data-error-id="${CSS.escape(errorId)}"]`);
+      item?.classList.add("is-active");
+    }
+
+    function gateIfNeededForApply() {
+  // ✅ Anonymous: allow FIRST apply free, gate + BLUR on SECOND apply
+  if (!window.IS_AUTHENTICATED) {
+    if (appliedCorrections < 1) return true;
+
+    persistHighlightedState();
+
+    // 🔒 lock immediately so sidebar/tooltip blurs while modal is open
+    persistHighlightedState();
+
+// ⛔ DO NOT lock yet
+    setPendingLock("auth");
+
+    // ✅ open modal
+    window.openRegisterModal();
+    return false;
+
+    registerClose?.addEventListener("click", () => {
+  closeRegisterModal();
+  window.__tcApplyPendingLock?.();
 });
 
+registerModal?.querySelector(".modal__overlay")
+  ?.addEventListener("click", () => {
+    closeRegisterModal();
+    window.__tcApplyPendingLock?.();
+  });
+
+
+  }
+
+  // ✅ Logged in but unpaid: allow FIRST apply free, gate + BLUR on SECOND apply
+  if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
+    if (appliedCorrections < 1) return true;
+
+    persistHighlightedState();
+
+    sessionStorage.setItem(LOCK_KEYS.payLocked, "1");
+    applyLockToUI();
+
+    window.openPaymentModal();
+    return false;
+  }
+
+  // ✅ Paying: no gate
+  return true;
+}
 
 
 
- // Make functions available to main.js
- window.openAuthModal = openAuthModal;
- window.openRegisterModal = openRegisterModal;
+
+function gateIfNeededForHighlight() {
+  // ✅ Anonymous users can view suggestions/highlights (apply is still gated)
+  if (!window.IS_AUTHENTICATED) return true;
+
+  // Logged in but NOT paying → keep your current paywall behavior
+  if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
+    persistHighlightedState();
+    window.openPaymentModal();
+    return false;
+  }
+
+  return true;
+}
+
+
+
+
+function showTooltipForErrorSpan(errorSpan) {
+  if (!tooltip || !errorSpan) return;
+
+  activeError = errorSpan;
+
+  const orig = errorSpan.dataset.original || "";
+  const sugg = errorSpan.dataset.suggestion || "";
+  const badgeKey = errorSpan.dataset.badge || "error";
+  const badgeText = errorSpan.dataset.badgeText || "Feil";
+
+  const lockMode = getLockMode();
+const ctaText =
+  lockMode === "auth"
+    ? "Opprett konto for å se rettelser"
+    : "Start gratis prøve for å se korreksjoner";
+const ctaClass = lockMode === "auth" ? "unlock-auth" : "unlock-pay";
+
+tooltip.innerHTML = `
+  <div class="tc-tip" role="dialog" aria-label="Forslag">
+    <div class="tc-tip__top">
+      <span class="tc-badge tc-badge--${escapeHTML(badgeKey)}">
+        ${escapeHTML(badgeText)}
+      </span>
+      <button type="button" class="tc-tip__close" aria-label="Lukk">×</button>
+    </div>
+
+    <div class="tc-tip__row">
+      <span class="tc-tip__from">${escapeHTML(orig)}</span>
+      <span class="tc-tip__arrow">→</span>
+      ${
+        lockMode
+          ? `<span class="tc-tip__to tc-tip__to--blur">${escapeHTML(sugg)}</span>`
+          : `<span class="tc-tip__to">${escapeHTML(sugg)}</span>`
+      }
+    </div>
+
+    <div class="tc-tip__actions">
+      ${
+        lockMode
+          ? `<button type="button"
+                     class="tc-tip__btn tc-tip__btn--primary ${ctaClass}">
+               ${escapeHTML(ctaText)}
+             </button>`
+          : `<button type="button"
+                     class="tc-tip__btn tc-tip__btn--primary apply">
+               Bruk
+             </button>
+             <button type="button"
+                     class="tc-tip__btn dismiss">
+               Avvis
+             </button>`
+      }
+    </div>
+  </div>
+`;
+
+  // Prepare measure
+  tooltip.style.visibility = "hidden";
+  tooltip.style.display = "block";
+  tooltip.style.left = "0px";
+  tooltip.style.top = "0px";
+
+  const wordRect = errorSpan.getBoundingClientRect();
+  const tipRect  = tooltip.getBoundingClientRect();
+
+  const GAP = 12;
+  const PADDING = 8;
+
+  let top = wordRect.top - tipRect.height - GAP;
+  let isBelow = false;
+
+  if (top < PADDING) {
+    top = wordRect.bottom + GAP;
+    isBelow = true;
+  }
+
+  let left = wordRect.left + wordRect.width / 2;
+  const minLeft = PADDING + tipRect.width / 2;
+  const maxLeft = window.innerWidth - PADDING - tipRect.width / 2;
+  left = Math.max(minLeft, Math.min(maxLeft, left));
+
+  tooltip.classList.toggle("is-below", isBelow);
+  tooltip.classList.toggle("is-above", !isBelow);
+
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.transform = "translateX(-50%)";
+
+  tooltip.style.visibility = "visible";
+  tooltip.classList.add("visible");
+}
+
+
+    /* -------------------------------
+       CLICK IN EDITOR → TOOLTIP
+    --------------------------------*/
+    editor.addEventListener("click", (e) => {
+      // 🔒 Block tooltip clicks for unpaid users
+
+
+  const error = e.target.closest(".error");
+  if (!error) return;
+
+  // 🔒 Gate highlight interaction after first free use
+  if (!gateIfNeededForHighlight()) return;
+
+  const id = error.dataset.errorId || "";
+  if (id) setActiveById(id);
+
+  showTooltipForErrorSpan(error);
+});
+
+  
+    /* -------------------------------
+       SIDEBAR EVENTS (JUMP / APPLY / DISMISS)
+    --------------------------------*/
+    suggestionsList?.addEventListener("click", (e) => {
+      const item = e.target.closest(".s-item");
+      if (!item) return;
+  
+      const errorId = item.dataset.errorId || "";
+      if (!errorId) return;
+  
+      // ✅ NEW: Locked CTA buttons (blur mode)
+      if (e.target.closest("[data-unlock-auth]")) {
+        persistHighlightedState();
+        sessionStorage.setItem(LOCK_KEYS.authLocked, "1");
+        applyLockToUI();
+        hideTooltip();
+        activeError = null;
+        clearActiveStates();
+        window.openRegisterModal();
+        return;
+      }
+
+      if (e.target.closest("[data-unlock-pay]")) {
+        persistHighlightedState();
+        sessionStorage.setItem(LOCK_KEYS.payLocked, "1");
+        applyLockToUI();
+        hideTooltip();
+        activeError = null;
+        clearActiveStates();
+        window.openPaymentModal();
+        return;
+      }
+
+
+
+
+
+      // Jump
+      if (e.target.closest("[data-jump]")) {
+  
+        const span = editor.querySelector(`.error[data-error-id="${CSS.escape(errorId)}"]`);
+        if (!span) {
+          // already applied/dismissed
+          item.remove();
+          updateSidebarCount();
+          return;
+        }
+  
+        setActiveById(errorId);
+        span.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        showTooltipForErrorSpan(span);
+        return;
+      }
+  
+      if (e.target.closest("[data-apply]")) {
+  if (!gateIfNeededForApply()) return;
+  applyOrDismissById(errorId, "apply");
+  return;
+}
+
+  
+if (e.target.closest("[data-dismiss]")) {
+  applyOrDismissById(errorId, "dismiss");
+  return;
+}
+
+    });
+  
+    function removeSidebarItemById(errorId) {
+  const li = suggestionsList?.querySelector(`.s-item[data-error-id="${CSS.escape(errorId)}"]`);
+  li?.remove();
+
+  updateSidebarCount();
+
+  // ✅ NEW: if no highlights remain, reset all numbers to 0
+  maybeResetNumbersIfNoHighlightsLeft();
+}
+
+  
+    function hideTooltip() {
+      if (!tooltip) return;
+      tooltip.classList.remove("visible");
+      tooltip.style.display = "none";
+      tooltip.style.visibility = "hidden";
+      tooltip.innerHTML = "";
+    }
+  
+    function applyOrDismissById(errorId, action) {
+      const span = editor.querySelector(`.error[data-error-id="${CSS.escape(errorId)}"]`);
+      if (!span) {
+        removeSidebarItemById(errorId);
+        return;
+      }
+  
+      if (action === "apply") {
+        const suggestion = span.dataset.suggestion || "";
+        span.replaceWith(document.createTextNode(suggestion));
+  
+        appliedCorrections += 1;
+        sessionStorage.setItem("appliedCorrections", appliedCorrections.toString());
+      } else {
+        const original = span.dataset.original || "";
+        span.replaceWith(document.createTextNode(original));
+      }
+  
+      lastPlainText = getPlainText();
+      sessionStorage.setItem("tc_text", lastPlainText);
+      updateCounts(lastPlainText);
+  
+      removeSidebarItemById(errorId);
+      clearActiveStates();
+      hideTooltip();
+      activeError = null;
+
+      // ✅ NEW: if last highlight is gone, reset numbers (also persists)
+      maybeResetNumbersIfNoHighlightsLeft();
+
+      // Keep persisting normal state too
+      persistHighlightedState();
+
+
+    }
+  
+    /* -------------------------------
+       APPLY / DISMISS FROM TOOLTIP
+    --------------------------------*/
+/* -------------------------------
+   APPLY / DISMISS / UNLOCK FROM TOOLTIP
+--------------------------------*/
+document.addEventListener("click", (e) => {
+  const unlockAuthBtn = e.target.closest(".tooltip-portal .unlock-auth");
+  const unlockPayBtn  = e.target.closest(".tooltip-portal .unlock-pay");
+  const applyBtn      = e.target.closest(".tooltip-portal .apply");
+  const dismissBtn    = e.target.closest(".tooltip-portal .dismiss");
+
+  if (!unlockAuthBtn && !unlockPayBtn && !applyBtn && !dismissBtn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  // 🔓 CTA → Register
+  if (unlockAuthBtn) {
+    persistHighlightedState();
+    sessionStorage.setItem(LOCK_KEYS.authLocked, "1");
+    applyLockToUI();
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+    window.openRegisterModal();
+    return;
+  }
+
+  // 💳 CTA → Payment
+  if (unlockPayBtn) {
+    persistHighlightedState();
+    sessionStorage.setItem(LOCK_KEYS.payLocked, "1");
+    applyLockToUI();
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
+    window.openPaymentModal();
+    return;
+  }
+
+  if (!activeError) return;
+
+  const errorId = activeError.dataset.errorId || "";
+
+  if (applyBtn) {
+    if (!gateIfNeededForApply()) return;
+
+    const suggestion = activeError.dataset.suggestion || "";
+    activeError.replaceWith(document.createTextNode(suggestion));
+
+    appliedCorrections += 1;
+    sessionStorage.setItem("appliedCorrections", appliedCorrections.toString());
+  } else {
+    const original = activeError.dataset.original || "";
+    activeError.replaceWith(document.createTextNode(original));
+  }
+
+  lastPlainText = getPlainText();
+  sessionStorage.setItem("tc_text", lastPlainText);
+  updateCounts(lastPlainText);
+
+  if (errorId) removeSidebarItemById(errorId);
+
+  hideTooltip();
+  activeError = null;
+  clearActiveStates();
+}, true);
+
+    /* -------------------------------
+       INIT
+    --------------------------------*/
+    const restored = restoreHighlightedState();
+
+if (!restored) {
+  const saved = sessionStorage.getItem("tc_text");
+  if (saved) {
+    lastPlainText = saved;
+    editor.innerHTML = htmlWithNewlines(saved);
+  }
+
+  updateCounts(lastPlainText);
+  persistHighlightedState();
+  applyLockToUI();
+  enforceLengthLimit(lastPlainText);
+  clearSuggestionsUI();
+} else {
+  // If restored, keep whatever was stored (highlights + sidebar)
+  // Make sure the count is sane
+  updateSidebarCount();
+}
+
+editor.focus();
+
+  
+    /* -------------------------------
+       INPUT
+    --------------------------------*/
+    editor.addEventListener("input", () => {
+      if (editor.dataset.rendering === "1") return;
+
+      lastPlainText = getPlainText();
+      sessionStorage.setItem("tc_text", lastPlainText);
+      updateCounts(lastPlainText);
+  
+      // Editing resets free usage
+      appliedCorrections = 0;
+      sessionStorage.setItem("appliedCorrections", "0");
+      // 🔓 Reset payment gate when text changes
+sessionStorage.removeItem("tc_payment_gate_triggered");
+
+  
+      // Clear stale suggestions when user edits
+      clearSuggestionsUI();
+      clearActiveStates();
+hideTooltip();
+activeError = null;
+
+// ✅ NEW: handle last correction finished
+maybeResetNumbersIfNoHighlightsLeft();
+
+// ✅ IMPORTANT: persist (your tooltip handler didn't before)
+persistHighlightedState();
+
+
+unlockSidebar();
+enforceLengthLimit(lastPlainText);
+
+    });
+  
+    clearBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      editor.innerHTML = "";
+      lastPlainText = "";
+      sessionStorage.removeItem("tc_text");
+      updateCounts("");
+      enforceLengthLimit("");
+      clearSuggestionsUI();
+      clearActiveStates();
+      hideTooltip();
+      activeError = null;
+      editor.focus();
+    });
+  
+    /* -------------------------------
+       SUBMIT
+    --------------------------------*/
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+  
+      const text = lastPlainText.trim();
+      if (!text) return;
+  
+      // Hard stop on length
+      const wordCount = countWords(text);
+      if (wordCount > MAX_WORDS) {
+        enforceLengthLimit(text);
+        submit.classList.remove("is-loading");
+        return;
+      }
+  
+      submit.disabled = true;
+      submit.classList.add("is-loading");
+  
+      try {
+        const res = await fetch("/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ text }),
+        });
+  
+        const data = await res.json();
+  
+        const diffs = getWordDiffs(data.original_text, data.corrected_text);
+  
+        editor.dataset.rendering = "1";
+editor.innerHTML = buildHighlightedHTML(data.original_text, diffs);
+delete editor.dataset.rendering;
+
+  
+        // Render sidebar suggestions
+        // Render sidebar suggestions
+        renderSuggestions(diffs);
+
+                // ✅ NEW: Show random "Tekstkvalitet" based on length of the text
+                if (diffs.length) {
+          showQualitySummaryForText(data.original_text);
+          syncTotalSuggestionsFromQuality();
+        } else {
+          resetAllCorrectionNumbersToZero();
+        }
+
+
+        persistHighlightedState();
+
+
+        lastPlainText = data.original_text;
+        sessionStorage.setItem("tc_text", lastPlainText);
+        updateCounts(lastPlainText);
+
+  
+        // Reset free correction counter on new result
+// Reset free correction counter ONLY for anonymous users
+if (!window.IS_AUTHENTICATED) {
+  appliedCorrections = 0;
+  sessionStorage.setItem("appliedCorrections", "0");
+}
+
+  
+        clearActiveStates();
+        hideTooltip();
+        activeError = null;
+  
+      } catch (err) {
+        console.error("Submit error:", err);
+      } finally {
+        submit.disabled = false;
+        submit.classList.remove("is-loading");
+      }
+    });
+  })();
+
+
+
+
+
+
+  </script>
+  
+
+
+<script>
+
+  
+  // Login modal
+  const authModal = document.getElementById("auth-modal");
+  const authClose = document.getElementById("auth-close");
+ 
+ 
+  // Register modal
+  const registerModal = document.getElementById("register-modal");
+  const registerClose = document.getElementById("register-close");
+ 
+ 
+  // Switch buttons
+  const openRegisterBtn = document.getElementById("open-register");
+  const openLoginBtn = document.getElementById("open-login");
+ 
+ 
+  function openAuthModal(){
+  forceCloseTooltip();
+
+  authModal.classList.add("active");
+  authModal.setAttribute("aria-hidden", "false");
+}
+
+ 
+  function closeAuthModal(){
+    authModal.classList.remove("active");
+    authModal.setAttribute("aria-hidden", "true");
+  }
+ 
+ 
+  function openRegisterModal(){
+  // ✅ FORCE-CLOSE TOOLTIP FIRST
+  forceCloseTooltip();
+
+  closeAuthModal();
+  registerModal.classList.add("active");
+  registerModal.setAttribute("aria-hidden", "false");
+}
+
+ 
+  function closeRegisterModal(){
+    registerModal.classList.remove("active");
+    registerModal.setAttribute("aria-hidden", "true");
+  }
+ 
+ 
+  // Close handlers
+  authClose?.addEventListener("click", closeAuthModal);
+  authModal?.querySelector(".modal__overlay")?.addEventListener("click", closeAuthModal);
+ 
+ 
+  registerClose?.addEventListener("click", closeRegisterModal);
+  registerModal?.querySelector(".modal__overlay")?.addEventListener("click", closeRegisterModal);
+ 
+ 
+  // Switch between modals
+  openRegisterBtn?.addEventListener("click", () => {
+    closeAuthModal();
+    openRegisterModal();
+  });
+ 
+ 
+  openLoginBtn?.addEventListener("click", () => {
+  closeRegisterModal();
+  openAuthModal();
+ });
+ 
+ 
+ 
+ 
+  // Make functions available to main.js
+  window.openAuthModal = openAuthModal;
+  window.openRegisterModal = openRegisterModal;
+ </script>
+ 
+
+<script>
+  (function () {
+    const modal = document.getElementById("paymentModal");
+
+    function openPaymentModal() {
+  if (!modal) {
+    console.error("❌ paymentModal not found");
+    return;
+  }
+
+  // ✅ FORCE-CLOSE ANY OPEN TOOLTIP
+  window.__tcTooltip?.classList.remove("visible");
+  window.__tcTooltip && (window.__tcTooltip.style.display = "none");
+  window.__tcTooltip && (window.__tcTooltip.innerHTML = "");
+
+  modal.hidden = false;
+}
+
+
+    function closePaymentModal() {
+      if (!modal) return;
+      modal.hidden = true;
+    }
+
+    modal?.querySelector(".pay-modal__close")
+      ?.addEventListener("click", closePaymentModal);
+
+    modal?.querySelector("[data-close-modal]")
+      ?.addEventListener("click", closePaymentModal);
+
+    // 🔑 expose globally (THIS fixes your error)
+    window.openPaymentModal = openPaymentModal;
+  })();
 </script>
-</body>
-</html>
+
+<script>
+  (function () {
+    const checkoutBtn = document.getElementById("start-checkout");
+    if (!checkoutBtn) return;
+
+    checkoutBtn.addEventListener("click", async function (e) {
+      e.preventDefault();
+
+      try {
+        const csrfToken = document.querySelector(
+          "input[name=csrfmiddlewaretoken]"
+        )?.value;
+
+        if (!csrfToken) {
+          alert("Sikkerhetstoken mangler. Last siden på nytt.");
+          return;
+        }
+
+        const res = await fetch("/create-checkout-session/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+        });
+
+        if (!res.ok) {
+          throw new Error("Checkout request failed");
+        }
+
+        const data = await res.json();
+
+        if (!data.url) {
+          throw new Error("Stripe URL mangler");
+        }
+
+        // 🚀 Redirect to Stripe Checkout
+        window.location.href = data.url;
+
+      } catch (err) {
+        console.error("Stripe checkout error:", err);
+        alert("Noe gikk galt. Prøv igjen om et øyeblikk.");
+      }
+    });
+  })();
+</script>
+
+
+{% if messages %}
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    if (window.openAuthModal) {
+      window.openAuthModal();
+    }
+  });
+</script>
+
+
+
+{% endif %}
+
+  
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+
+    if (
+      params.get("checkout") === "success" &&
+      !sessionStorage.getItem("ads_subscribe_fired")
+    ) {
+      // Prevent double firing
+      sessionStorage.setItem("ads_subscribe_fired", "1");
+
+      // Temporary unlock until webhook updates DB
+      window.IS_PAYING = true;
+
+      // ✅ Google Ads conversion
+      if (typeof gtag === "function") {
+        gtag('event', 'conversion_event_subscribe_paid');
+      }
+
+      // Clean URL (SEO + UX)
+      history.replaceState({}, "", "/");
+    }
+  })();
+</script>
 

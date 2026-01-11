@@ -874,7 +874,10 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+from django.conf import settings
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 
 
 @csrf_exempt

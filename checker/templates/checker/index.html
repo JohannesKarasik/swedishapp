@@ -2813,8 +2813,9 @@ delete editor.dataset.rendering;
  
  
   function openAuthModal(){
+    if (typeof forceCloseTooltip === "function") {
   forceCloseTooltip();
-
+}
   authModal.classList.add("active");
   authModal.setAttribute("aria-hidden", "false");
 }
@@ -2828,8 +2829,9 @@ delete editor.dataset.rendering;
  
   function openRegisterModal(){
   // ✅ FORCE-CLOSE TOOLTIP FIRST
+  if (typeof forceCloseTooltip === "function") {
   forceCloseTooltip();
-
+}
   closeAuthModal();
   registerModal.classList.add("active");
   registerModal.setAttribute("aria-hidden", "false");

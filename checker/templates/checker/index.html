@@ -1832,8 +1832,9 @@ function restoreHighlightedState() {
   // Restore counts (or recompute)
   if (suggestionsCount) {
     const c = sessionStorage.getItem(TC_STATE.sidebarCount);
+    if (typeof syncTotalSuggestionsFromQuality === "function") {
     syncTotalSuggestionsFromQuality();
-  }
+}  }
 
   // Restore quality summary
   if (qualityWrap && qsSerious && qsSmall && qsImprove) {

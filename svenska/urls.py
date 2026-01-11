@@ -20,6 +20,7 @@ from django.urls import path, include
 urlpatterns = [
     path("", include("checker.urls")),
     path("create-checkout-session/", include("checker.urls")),
+    
 ]
 
 

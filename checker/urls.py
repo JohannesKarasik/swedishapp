@@ -8,4 +8,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
 
     path("create-checkout-session/", views.create_checkout_session, name="create_checkout_session"),
+    path("stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
+    path("settings/", views.settings_view, name="settings"),
+    path("cancel-subscription/", views.cancel_subscription, name="cancel_subscription"),
 ]

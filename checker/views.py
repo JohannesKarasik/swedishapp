@@ -866,154 +866,165 @@ def logout_view(request):
 
 
 
-
 import stripe
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.models import User
 
-from django.conf import settings
+from .models import Profile
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def _set_access_from_subscription(profile: Profile, subscription_obj: dict | None):
+    """
+    Stripe statuses that should unlock your app:
+    - trialing
+    - active
+    """
+    if not subscription_obj:
+        profile.is_paying = False
+        profile.save(update_fields=["is_paying"])
+        return
 
-@csrf_exempt
+    status = subscription_obj.get("status")
+    profile.is_paying = status in ("trialing", "active")
+    profile.save(update_fields=["is_paying"])
+
+
 @require_POST
 @login_required
 def create_checkout_session(request):
     """
-    Creates a Stripe Checkout Session for a subscription with trial.
-    Redirects user back to `/` on success.
-    User access is unlocked via webhook (source of truth).
+    Creates a Stripe Checkout Session (subscription + trial).
+    Webhook is source of truth for unlocking.
     """
 
-    # Safety: make sure user has an email (Stripe prefers it)
+    if not settings.STRIPE_PRICE_ID:
+        return JsonResponse({"error": "STRIPE_PRICE_ID is not set"}, status=400)
+
     customer_email = request.user.email or None
 
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",
-
-            # 🔑 THIS IS CRITICAL — used by webhook
-            client_reference_id=request.user.id,
-
+            client_reference_id=str(request.user.id),  # used by webhook
             customer_email=customer_email,
-
-            line_items=[
-                {
-                    "price": settings.STRIPE_PRICE_ID,
-                    "quantity": 1,
-                }
-            ],
-
-            subscription_data={
-                "trial_period_days": 30,
-            },
-
+            line_items=[{"price": settings.STRIPE_PRICE_ID, "quantity": 1}],
+            subscription_data={"trial_period_days": 30},
             success_url=request.build_absolute_uri("/?checkout=success"),
             cancel_url=request.build_absolute_uri("/"),
-
-            # ✅ Promo/coupon box removed
             allow_promotion_codes=False,
         )
-
         return JsonResponse({"url": session.url})
-
     except Exception as e:
-        import traceback
-        print("STRIPE ERROR:", str(e))
-        traceback.print_exc()
-
-        return JsonResponse(
-            {"error": str(e)},
-            status=400
-        )
-
-        
-
-
-
-
-from django.contrib.auth.models import User
+        return JsonResponse({"error": str(e)}, status=400)
 
 
 @csrf_exempt
+@require_POST
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
     try:
         event = stripe.Webhook.construct_event(
-            payload,
-            sig_header,
-            settings.STRIPE_WEBHOOK_SECRET,
+            payload=payload,
+            sig_header=sig_header,
+            secret=settings.STRIPE_WEBHOOK_SECRET,
         )
     except Exception:
         return HttpResponse(status=400)
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
+    event_type = event.get("type")
+    obj = event["data"]["object"]
 
-        user_id = session.get("client_reference_id")
-        if not user_id:
-            return HttpResponse(status=200)
+    # 1) Checkout completed (trial starts here too)
+    if event_type == "checkout.session.completed":
+        user_id = obj.get("client_reference_id")
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                profile, _ = Profile.objects.get_or_create(user=user)
 
-        try:
-            user = User.objects.get(id=user_id)
-            user.is_paying = True
-            user.stripe_customer_id = session.get("customer")
-            user.stripe_subscription_id = session.get("subscription")
-            user.save()
+                profile.stripe_customer_id = obj.get("customer")
+                profile.stripe_subscription_id = obj.get("subscription")
 
+                # fetch subscription to read status (trialing/active)
+                sub_id = profile.stripe_subscription_id
+                if sub_id:
+                    sub = stripe.Subscription.retrieve(sub_id)
+                    _set_access_from_subscription(profile, sub)
+                else:
+                    profile.save()
 
-            profile.save()
-        except User.DoesNotExist:
-            pass
+            except User.DoesNotExist:
+                pass
+
+    # 2) Subscription changes (upgrade/downgrade, cancel_at_period_end toggles, etc.)
+    elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
+        sub_id = obj.get("id")
+        customer_id = obj.get("customer")
+        if sub_id and customer_id:
+            profile = Profile.objects.filter(stripe_customer_id=customer_id).first()
+            if profile:
+                profile.stripe_subscription_id = sub_id
+                profile.save(update_fields=["stripe_subscription_id"])
+                _set_access_from_subscription(profile, obj)
+
+    # 3) Subscription deleted => lock access
+    elif event_type == "customer.subscription.deleted":
+        customer_id = obj.get("customer")
+        profile = Profile.objects.filter(stripe_customer_id=customer_id).first()
+        if profile:
+            profile.is_paying = False
+            profile.stripe_subscription_id = None
+            profile.save(update_fields=["is_paying", "stripe_subscription_id"])
 
     return HttpResponse(status=200)
 
 
-
 @login_required
 def cancel_subscription(request):
-    user = request.user
+    """
+    Cancels subscription immediately (like your Norwegian version).
+    If you want "cancel at period end", I included that option below.
+    """
+    profile = getattr(request.user, "profile", None)
 
-    if not getattr(user, "stripe_subscription_id", None):
-
+    if not profile or not profile.stripe_subscription_id:
         messages.error(request, "Fant ikke aktivt abonnement.")
         return redirect("settings")
 
     try:
-        stripe.checkout.Session.expire  # noop import guard
+        # Option A: cancel immediately
+        stripe.Subscription.delete(profile.stripe_subscription_id)
 
-        stripe.Subscription.delete(user.stripe_subscription_id)
+        # Option B (recommended): cancel at period end instead:
+        # stripe.Subscription.modify(profile.stripe_subscription_id, cancel_at_period_end=True)
 
-        user.is_paying = False
-        user.stripe_subscription_id = None
-        user.save()
-
+        profile.is_paying = False
+        profile.stripe_subscription_id = None
+        profile.save(update_fields=["is_paying", "stripe_subscription_id"])
 
         messages.success(request, "Abonnementet er avsluttet.")
-    except Exception as e:
+    except Exception:
         messages.error(request, "Kunne ikke avslutte abonnementet.")
 
     return redirect("settings")
 
 
-
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-
 @login_required
 def settings_view(request):
     user = request.user
-    user = getattr(user, "user", None)
+    profile = getattr(user, "profile", None)
 
     if request.method == "POST":
-        # Change password
         current = request.POST.get("current_password")
         new = request.POST.get("new_password")
 
@@ -1039,5 +1050,3 @@ def settings_view(request):
             "is_paying": bool(profile and profile.is_paying),
         }
     )
-
-

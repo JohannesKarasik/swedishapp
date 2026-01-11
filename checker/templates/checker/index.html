@@ -2,7 +2,7 @@
 
 
 <!DOCTYPE html>
-<html lang="no">
+<html lang="sv">
 <head>
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-W536FJFK9J"></script>
@@ -22,8 +22,8 @@
 <link rel="manifest" href="{% static 'checker/favicon_io/site.webmanifest' %}">
  <meta charset="UTF-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1" />
- <title>Rettskriving Sjekk – Korrektur og Grammatikk på Norsk</title>
- <meta name="description" content="Sjekk rettskriving, grammatikk og tegnsetting på norsk. Bruk vårt gratis korrekturverktøy for feilfri tekst – ingen innlogging, ingen kostnad">
+ <title>Rätta Text & Grammatik Online – Stavning Svenska Texter</title>
+ <meta name="description" content="Rätta text, grammatik och stavning i svenska texter online. Använd vårt gratis rättstavningsprogram för snabb och enkel textgranskning.">
  <link rel="stylesheet" href="{% static 'checker/main.css' %}">
 </head>
 <body>
@@ -67,7 +67,7 @@
                   role="textbox"
                   aria-multiline="true"
                   spellcheck="false"
-                  placeholder="Lim inn teksten din her..."></div>
+                  placeholder="Klistra in din text här..."></div>
 
                 <p id="length-error" class="length-error" hidden>
                   Texten är för lång. Du kan rätta max 800 tecken åt gången.
@@ -96,60 +96,37 @@
 
         </div>
 
-<!-- RIGHT COLUMN -->
-<aside class="checker-sidebar" id="suggestions-panel" aria-label="Förslag">
+        <aside class="checker-sidebar" id="suggestions-panel" aria-label="Förslag">
 
-  <div class="checker-sidebar__head">
-    <div>
-      <div class="checker-sidebar__title">Förslag</div>
-      <div class="checker-sidebar__sub">Klicka på ett förslag för att hoppa till felet.</div>
-    </div>
-    <div class="checker-sidebar__count">
-      <span id="suggestions-count">0</span>
-    </div>
-  </div>
-
-  <div class="quality-summary" id="quality-summary" hidden>
-    <div class="quality-summary__title">Textkvalitet</div>
-
-    <div class="quality-summary__grid">
-      <div class="qs-item">
-        <span class="qs-label">Allvarliga fel</span>
-        <span class="qs-count qs-count--serious" id="qs-serious">0</span>
-      </div>
-
-      <div class="qs-item">
-        <span class="qs-label">Små fel</span>
-        <span class="qs-count qs-count--small" id="qs-small">0</span>
-      </div>
-
-      <div class="qs-item">
-        <span class="qs-label">Förbättringar</span>
-        <span class="qs-count qs-count--improve" id="qs-improve">0</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="checker-sidebar__empty" id="suggestions-empty">
-    Klicka på <strong>Rätta text</strong> för att se förslag här.
-  </div>
-
-  <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
-    <p><strong>Skapa konto för att se förslagen</strong></p>
-    <p>Du kan rätta ett fel gratis. Skapa konto för att fortsätta.</p>
-  
-    <button type="button" class="btn btn--primary" onclick="window.openRegisterModal()">
-      Skapa konto
-    </button>
-  </div>
-</aside>
-
-          
-          
-
+          <div class="checker-sidebar__head">
+            <div>
+              <div class="checker-sidebar__title">Förslag</div>
+              <div class="checker-sidebar__sub">
+                Klicka på ett förslag för att hoppa till felet.
+              </div>
+            </div>
+            <div class="checker-sidebar__count">
+              <span id="suggestions-count">0</span>
+            </div>
+          </div>
+        
+          <div class="quality-summary" id="quality-summary" hidden>
+            ...
+          </div>
+        
+          <div class="checker-sidebar__empty" id="suggestions-empty">
+            Klicka på <strong>Rätta text</strong> för att se förslag här.
+          </div>
+        
+          <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
+            ...
+          </div>
+        
+          <!-- ✅ THIS MUST BE INSIDE THE ASIDE -->
           <ul class="checker-sidebar__list" id="suggestions-list"></ul>
+        
         </aside>
-
+        
       </div>
     </div>
 
@@ -256,11 +233,12 @@
   <div class="modal__content" role="dialog" aria-modal="true">
  
  
-    <button class="modal__close" id="auth-close" aria-label="Lukk">×</button>
+    <button class="modal__close" id="auth-close" aria-label="Stäng"    >×</button>
  
  
-    <h2 class="subheading">Logg inn</h2>
-    <p class="sub">Du må være innlogget for å rette tekst.</p>
+    <h2 class="subheading">Logga in</h2>
+    <p class="sub">Du måste vara inloggad för att rätta text.</p>
+    
 
     {% if messages %}
   {% for message in messages %}
@@ -280,15 +258,15 @@
    
       <div class="auth-fields">
         <input type="email" name="email" required placeholder="E-post" autocomplete="email">
-        <input type="password" name="password" required placeholder="Passord" autocomplete="current-password">
+        <input type="password" name="password" required placeholder="Lösenord" autocomplete="current-password">
       </div>
      
    
       <div class="auth-actions">
-        <button class="btn btn--primary" type="submit">Logg inn</button>
+        <button class="btn btn--primary" type="submit">Logga in</button>
      
         <button type="button" class="auth-link" id="open-register">
-          Opprett konto
+          Skapa konto
         </button>
       </div>
      
@@ -306,11 +284,12 @@
   <div class="modal__content" role="dialog" aria-modal="true">
  
  
-    <button class="modal__close" id="register-close" aria-label="Lukk">×</button>
+    <button class="modal__close" id="register-close" aria-label="Stäng"
+    >×</button>
  
  
-    <h2 class="subheading" style="margin-top: 0px;">Opprett konto</h2>
-    <p class="sub">Opprett en konto for å kunne rette tekst.</p>
+    <h2 class="subheading" style="margin-top: 0px;">Skapa konto</h2>
+    <p class="sub">Skapa ett konto för att kunna rätta text.</p>
  
  
     <!-- Uses Django’s default UserCreationForm field names -->
@@ -319,16 +298,16 @@
       <input type="hidden" name="next" value="{{ request.path }}">
    
       <div class="auth-fields">
-        <input type="text" name="name" required placeholder="Navn" autocomplete="name">
+        <input type="text" name="name" required placeholder="Namn" autocomplete="name">
         <input type="email" name="email" required placeholder="E-post" autocomplete="email">
-        <input type="password" name="password" required placeholder="Passord" autocomplete="new-password">
+        <input type="password" name="password" required placeholder="Lösenord"        autocomplete="new-password">
       </div>
      
    
       <div class="auth-actions">
         <button class="btn btn--primary" type="submit">Opprett konto</button>
         <button type="button" class="auth-link" id="open-login">
-          Jeg har allerede en konto
+          Jag har redan ett konto
         </button>
               </div>
  
@@ -346,25 +325,26 @@
   <div class="pay-modal__overlay" data-close-modal></div>
 
   <div class="pay-modal__content pay-modal__content--wide" role="document">
-    <button class="pay-modal__close" aria-label="Lukk">
+    <button class="pay-modal__close" aria-label="Stäng"
+    >
       &times;
     </button>
 
     <div class="pay-modal__badge" aria-hidden="true">
-      30 dagers gratis prøve
+      30 dagars gratis provperiod
     </div>
 
-    <h2 id="pay-modal-title">Få tilgang til Rettskriving Sjekk</h2>
+    <h2 id="pay-modal-title">Få tillgång till RättaText</h2>
 
     <p id="pay-modal-desc" class="pay-modal__subtext">
-      Du får full tilgang i 30 dager helt gratis.
-      Ønsker du å fortsette etter prøveperioden,
-      koster det 69 kr per måned.
-      Du kan når som helst avslutte før prøveperioden utløper.
+      Du får full tillgång i 30 dagar helt gratis.
+      Vill du fortsätta efter provperioden
+      kostar det 69 kr per månad.
+      Du kan när som helst avsluta innan provperioden löper ut.
     </p>
 
     <button class="pay-modal__cta" id="start-checkout">
-      Start gratis prøve
+      Starta gratis provperiod
     </button>
     
   </div>
@@ -1651,7 +1631,7 @@ function lockSidebarForPayment() {
   if (suggestionsEmpty) {
     suggestionsEmpty.hidden = false;
     suggestionsEmpty.innerHTML =
-      "Full tilgang krever abonnement. Start gratis prøve for å fortsette.";
+"Full tillgång kräver abonnemang. Starta gratis provperiod för att fortsätta."
   }
   if (qualityWrap) qualityWrap.hidden = true;
   if (suggestionsCount) suggestionsCount.textContent = "0";
@@ -2039,7 +2019,7 @@ window.__tcApplyLockToUI = applyLockToUI;
       if (errorEl) {
         errorEl.hidden = !tooLong;
         errorEl.textContent =
-          "Teksten er for lang. Du kan rette maks 800 ord om gangen.";
+"Texten är för lång. Du kan rätta högst 800 ord åt gången."
       }
     }
   
@@ -2127,7 +2107,7 @@ function pickBadge(original, suggestion, id) {
       data-original="${escapeHTML(d.original)}"
       data-suggestion="${escapeHTML(d.suggestion)}"
       data-badge="${escapeHTML(d.badgeKey || "error")}"
-      data-badge-text="${escapeHTML(d.badgeText || "Feil")}"
+      data-badge-text="${escapeHTML(d.badgeText || "Fel")}"
     >${escapeHTML(d.original)}</span>`;
     last = d.end;
   }
@@ -2345,7 +2325,7 @@ tooltip.innerHTML = `
       <span class="tc-badge tc-badge--${escapeHTML(badgeKey)}">
         ${escapeHTML(badgeText)}
       </span>
-      <button type="button" class="tc-tip__close" aria-label="Lukk">×</button>
+      <button type="button" class="tc-tip__close" aria-label="Stäng">×</button>
     </div>
 
     <div class="tc-tip__row">

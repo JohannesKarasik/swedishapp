@@ -920,11 +920,16 @@ def create_checkout_session(request):
         return JsonResponse({"url": session.url})
 
     except Exception as e:
+        import traceback
+        print("STRIPE ERROR:", str(e))
+        traceback.print_exc()
+
         return JsonResponse(
             {"error": str(e)},
             status=400
         )
-    
+
+        
 
 
 

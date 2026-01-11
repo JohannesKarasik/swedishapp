@@ -420,6 +420,7 @@ def insert_commas_with_openai(text: str) -> str:
             "Returnera ENDAST texten."
         )
 
+        client = get_openai_client()
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -494,6 +495,7 @@ def correct_with_openai(text: str) -> str:
 
 
         def call_llm(system_prompt: str, user_text: str) -> str:
+            client = get_openai_client()
             resp = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[

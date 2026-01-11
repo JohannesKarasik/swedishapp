@@ -8,6 +8,24 @@ import unicodedata
 from django.utils import timezone
 from zoneinfo import ZoneInfo
 
+
+from openai import OpenAI
+import os
+
+_openai_client = None
+
+def get_openai_client():
+    global _openai_client
+
+    if _openai_client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY is not set")
+
+        _openai_client = OpenAI(api_key=api_key)
+
+    return _openai_client
+
 # --- Paste normalization (Google Docs, Word, etc.) ---
 ZERO_WIDTH_RE = re.compile(r"[\u200B\u200C\u200D\u2060\uFEFF]")  # ZWSP/ZWNJ/ZWJ/WJ/BOM
 
@@ -187,7 +205,6 @@ def project_safe_word_corrections(original: str, corrected: str) -> str:
 # =================================================
 
 # Uses OPENAI_API_KEY from environment (systemd/gunicorn env or .env you load elsewhere)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 # =================================================

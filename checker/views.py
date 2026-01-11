@@ -930,7 +930,7 @@ def create_checkout_session(request):
 
 
 from django.contrib.auth.models import User
-from .models import Profile
+
 
 @csrf_exempt
 def stripe_webhook(request):

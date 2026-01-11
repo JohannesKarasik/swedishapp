@@ -2702,6 +2702,14 @@ enforceLengthLimit(lastPlainText);
       const text = lastPlainText.trim();
       if (!text) return;
 
+        // 💳 If logged in but not paying → paywall immediately
+  if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
+    persistHighlightedState();
+    window.openPaymentModal();
+    return;
+  }
+
+
       if (!window.IS_AUTHENTICATED && hasHitDailySubmitLimit()) {
     window.openRegisterModal();
     return;

@@ -101,9 +101,7 @@
           <div class="checker-sidebar__head">
             <div>
               <div class="checker-sidebar__title">Förslag</div>
-              <div class="checker-sidebar__sub">
-                Klicka på ett förslag för att hoppa till felet.
-              </div>
+              <div class="checker-sidebar__sub">Klicka på ett förslag för att hoppa till felet.</div>
             </div>
             <div class="checker-sidebar__count">
               <span id="suggestions-count">0</span>
@@ -111,7 +109,24 @@
           </div>
         
           <div class="quality-summary" id="quality-summary" hidden>
-            ...
+            <div class="quality-summary__title">Textkvalitet</div>
+        
+            <div class="quality-summary__grid">
+              <div class="qs-item">
+                <span class="qs-label">Allvarliga fel</span>
+                <span class="qs-count qs-count--serious" id="qs-serious">0</span>
+              </div>
+        
+              <div class="qs-item">
+                <span class="qs-label">Små fel</span>
+                <span class="qs-count qs-count--small" id="qs-small">0</span>
+              </div>
+        
+              <div class="qs-item">
+                <span class="qs-label">Förbättringar</span>
+                <span class="qs-count qs-count--improve" id="qs-improve">0</span>
+              </div>
+            </div>
           </div>
         
           <div class="checker-sidebar__empty" id="suggestions-empty">
@@ -119,13 +134,17 @@
           </div>
         
           <div class="checker-sidebar__locked" id="suggestions-locked" hidden>
-            ...
+            <p><strong>Skapa konto för att se förslagen</strong></p>
+            <p>Du kan rätta ett fel gratis. Skapa konto för att fortsätta.</p>
+        
+            <button type="button" class="btn btn--primary" onclick="window.openRegisterModal()">
+              Skapa konto
+            </button>
           </div>
         
-          <!-- ✅ THIS MUST BE INSIDE THE ASIDE -->
           <ul class="checker-sidebar__list" id="suggestions-list"></ul>
-        
         </aside>
+        
         
       </div>
     </div>

@@ -2221,8 +2221,9 @@ function renderSuggestions(diffs) {
   if (suggestionsList) suggestionsList.innerHTML = "";
   if (suggestionsCount) suggestionsCount.textContent = "0";
   setSidebarEmpty('Klicka på <strong>Rätta text</strong> för att se förslag här.');
-  hideQualitySummary(); // ✅ NEW
-}
+  if (typeof hideQualitySummary === "function") {
+  hideQualitySummary();
+}}
 
   
     /* -------------------------------

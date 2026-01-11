@@ -7,6 +7,7 @@ import difflib
 import unicodedata
 from django.utils import timezone
 from zoneinfo import ZoneInfo
+from .models import Profile
 
 
 from openai import OpenAI
@@ -264,6 +265,9 @@ def correct_with_openai_chunked(text: str, max_chars: int = 1800) -> str:
 
 
 def index(request):
+    # =========================
+    # AJAX TEXT CORRECTION
+    # =========================
     if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
         text = normalize_pasted_text(request.POST.get("text", ""))
 
@@ -293,7 +297,7 @@ def index(request):
                     "daily_limit": 2,
                 })
 
-        # ✅ Chunk correction när texten är lång
+        # ✅ Chunk correction when text is long
         if len(text) > 2000:
             corrected_text = correct_with_openai_chunked(text, max_chars=1800)
         else:
@@ -310,7 +314,7 @@ def index(request):
                 max_diffs=300,
             )
 
-        # ✅ increment daily count ONLY after a successful correction response
+        # ✅ increment daily count ONLY after a successful correction
         if free_count is not None:
             request.session["tc_free_count"] = free_count + 1
             request.session.modified = True
@@ -322,8 +326,24 @@ def index(request):
             "error_count": len(differences),
         })
 
-    return render(request, "checker/index.html")
+    # =========================
+    # PAGE LOAD (IMPORTANT)
+    # =========================
+    is_paying = False
+    if request.user.is_authenticated:
+        # 🔥 MUST re-query DB to avoid Django profile cache
+        is_paying = Profile.objects.filter(
+            user=request.user,
+            is_paying=True
+        ).exists()
 
+    return render(
+        request,
+        "checker/index.html",
+        {
+            "is_paying": is_paying,
+        }
+    )
 
 
 def same_words_exact(a: str, b: str) -> bool:

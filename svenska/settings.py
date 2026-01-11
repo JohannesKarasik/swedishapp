@@ -134,3 +134,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+
+import os
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_LIVE_SECRET_KEY")
+STRIPE_PRICE_ID = os.getenv("STRIPE_LIVE_PRICE_ID")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_LIVE_WEBHOOK_SECRET")

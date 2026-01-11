@@ -2668,23 +2668,31 @@ enforceLengthLimit(lastPlainText);
        SUBMIT
     --------------------------------*/
     form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-  
-      const text = lastPlainText.trim();
-      if (!text) return;
+  e.preventDefault();
 
-        // 💳 If logged in but not paying → paywall immediately
+  // ✅ ALWAYS read directly from the editor at submit-time
+  const rawNow = getPlainText();
+  const text = (rawNow || "").trim();
+
+  // Keep state consistent
+  lastPlainText = rawNow || "";
+  sessionStorage.setItem("tc_text", lastPlainText);
+
+  if (!text) return;
+
+  // 💳 If logged in but not paying → paywall immediately
   if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
     persistHighlightedState();
     window.openPaymentModal();
     return;
   }
 
-
-      if (!window.IS_AUTHENTICATED && hasHitDailySubmitLimit()) {
+  // ✅ Anonymous users get 2 free submits/day (don’t block before 2)
+  if (!window.IS_AUTHENTICATED && hasHitDailySubmitLimit()) {
     window.openRegisterModal();
     return;
   }
+
   
       // Hard stop on length
       const wordCount = countWords(text);
@@ -2721,7 +2729,14 @@ enforceLengthLimit(lastPlainText);
         const diffs = getWordDiffs(data.original_text, data.corrected_text);
   
         editor.dataset.rendering = "1";
-editor.innerHTML = buildHighlightedHTML(data.original_text, diffs);
+        const serverOriginal = (data && typeof data.original_text === "string")
+  ? data.original_text
+  : lastPlainText;
+
+// ✅ If serverOriginal is empty but we have editor text, do NOT wipe the editor
+const safeOriginal = serverOriginal && serverOriginal.length ? serverOriginal : lastPlainText;
+
+editor.innerHTML = buildHighlightedHTML(safeOriginal, diffs);
 // ✅ Count this successful correction
 if (!window.IS_AUTHENTICATED) {
   incrementDailySubmitCount();
@@ -2747,7 +2762,8 @@ delete editor.dataset.rendering;
         persistHighlightedState();
 
 
-        lastPlainText = data.original_text;
+        lastPlainText = safeOriginal;
+        sessionStorage.setItem("tc_text", lastPlainText);
         sessionStorage.setItem("tc_text", lastPlainText);
         updateCounts(lastPlainText);
 

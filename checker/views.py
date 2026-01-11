@@ -955,11 +955,11 @@ def stripe_webhook(request):
 
         try:
             user = User.objects.get(id=user_id)
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.is_paying = True
-            profile.stripe_customer_id = session.get("customer")
-            profile.stripe_subscription_id = session.get("subscription")
-            profile.save()
+            user.is_paying = True
+            user.stripe_customer_id = session.get("customer")
+            user.stripe_subscription_id = session.get("subscription")
+            user.save()
+
 
             profile.save()
         except User.DoesNotExist:
@@ -971,20 +971,22 @@ def stripe_webhook(request):
 
 @login_required
 def cancel_subscription(request):
-    profile = getattr(request.user, "profile", None)
+    user = request.user
 
-    if not profile or not profile.stripe_subscription_id:
+    if not getattr(user, "stripe_subscription_id", None):
+
         messages.error(request, "Fant ikke aktivt abonnement.")
         return redirect("settings")
 
     try:
         stripe.checkout.Session.expire  # noop import guard
 
-        stripe.Subscription.delete(profile.stripe_subscription_id)
+        stripe.Subscription.delete(user.stripe_subscription_id)
 
-        profile.is_paying = False
-        profile.stripe_subscription_id = None
-        profile.save()
+        user.is_paying = False
+        user.stripe_subscription_id = None
+        user.save()
+
 
         messages.success(request, "Abonnementet er avsluttet.")
     except Exception as e:
@@ -1000,7 +1002,7 @@ from django.contrib import messages
 @login_required
 def settings_view(request):
     user = request.user
-    profile = getattr(user, "profile", None)
+    user = getattr(user, "user", None)
 
     if request.method == "POST":
         # Change password

@@ -1650,127 +1650,75 @@ const qualityWrap = $("#quality-summary");
 const qsSerious = $("#qs-serious");
 const qsSmall   = $("#qs-small");
 const qsImprove = $("#qs-improve");
+// ✅ Counts must match actual highlights (diffs / .error spans)
+function showQualitySummaryFromDiffs(diffs) {
+  if (!qualityWrap || !qsSerious || !qsSmall || !qsImprove || !suggestionsCount) return;
 
-function randInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+  const list = Array.isArray(diffs) ? diffs : [];
+  const total = list.length;
 
+  // Total suggestions = total highlights
+  suggestionsCount.textContent = String(total);
 
-const suggestionsLocked = document.getElementById("suggestions-locked");
-
-
-function hasTriggeredPaymentGate() {
-  return sessionStorage.getItem("tc_payment_gate_triggered") === "1";
-}
-
-function forceCloseTooltip() {
-  const tp = window.__tcTooltip;
-  if (!tp) return;
-
-  tp.classList.remove("visible");
-  tp.style.display = "none";
-  tp.style.visibility = "hidden";
-  tp.innerHTML = "";
-
-  window.activeError = null;
-}
-
-// ✅ expose globally
-window.forceCloseTooltip = forceCloseTooltip;
-
-
-function triggerPaymentGate() {
-  sessionStorage.setItem("tc_payment_gate_triggered", "1");
-}
-
-
-function lockSidebarForAuth() {
-  // Hide real content
-  if (suggestionsList) suggestionsList.innerHTML = "";
-  if (suggestionsEmpty) suggestionsEmpty.hidden = true;
-  if (qualityWrap) qualityWrap.hidden = true;
-  if (suggestionsCount) suggestionsCount.textContent = "0";
-
-  // Show locked message
-  if (suggestionsLocked) suggestionsLocked.hidden = false;
-}
-
-function lockSidebarForPayment() {
-  if (suggestionsList) suggestionsList.innerHTML = "";
-  if (suggestionsEmpty) {
-    suggestionsEmpty.hidden = false;
-    suggestionsEmpty.innerHTML =
-"Full tillgång kräver abonnemang. Starta gratis provperiod för att fortsätta."
-  }
-  if (qualityWrap) qualityWrap.hidden = true;
-  if (suggestionsCount) suggestionsCount.textContent = "0";
-}
-
-
-function unlockSidebar() {
-  if (suggestionsLocked) suggestionsLocked.hidden = true;
-}
-
-
-function computeQualityCounts(wordCount) {
-  // If empty text, show nothing
-  if (!wordCount || wordCount <= 0) {
-    return { serious: 0, small: 0, improve: 0, show: false };
-  }
-
-  // 1–150 words
-  if (wordCount <= 150) {
-    return {
-      serious: randInt(2, 4),
-      small: 5,
-      improve: 2,
-      show: true
-    };
-  }
-
-  // >150 words
-  return {
-    serious: randInt(4, 8),
-    small: randInt(8, 10),
-    improve: 4,
-    show: true
-  };
-}
-
-function hideQualitySummary() {
-  if (qualityWrap) qualityWrap.hidden = true;
-  if (qsSerious) qsSerious.textContent = "0";
-  if (qsSmall) qsSmall.textContent = "0";
-  if (qsImprove) qsImprove.textContent = "0";
-}
-
-function showQualitySummaryForText(text) {
-  const wc = countWords(text || "");
-  const q = computeQualityCounts(wc);
-
-  if (!qualityWrap || !qsSerious || !qsSmall || !qsImprove) return;
-
-  if (!q.show) {
-    hideQualitySummary();
+  if (total === 0) {
+    qsSerious.textContent = "0";
+    qsSmall.textContent = "0";
+    qsImprove.textContent = "0";
+    qualityWrap.hidden = true;
     return;
   }
 
-  qsSerious.textContent = String(q.serious);
-  qsSmall.textContent   = String(q.small);
-  qsImprove.textContent = String(q.improve);
+  let serious = 0;
+  let small = 0;     // we map badge "error" -> "small"
+  let improve = 0;
+
+  for (const d of list) {
+    const k = d.badgeKey || "error";
+    if (k === "serious") serious++;
+    else if (k === "improve") improve++;
+    else small++;
+  }
+
+  qsSerious.textContent = String(serious);
+  qsSmall.textContent   = String(small);
+  qsImprove.textContent = String(improve);
   qualityWrap.hidden = false;
 }
 
-function syncTotalSuggestionsFromQuality() {
-  if (!suggestionsCount || !qsSerious || !qsSmall || !qsImprove) return;
+// ✅ When we don't have `diffs` (after apply/dismiss), recompute from DOM
+function updateSidebarNumbersFromDOM() {
+  if (!editor || !qualityWrap || !qsSerious || !qsSmall || !qsImprove || !suggestionsCount) return;
 
-  const total =
-    Number(qsSerious.textContent || 0) +
-    Number(qsSmall.textContent || 0) +
-    Number(qsImprove.textContent || 0);
+  const spans = Array.from(editor.querySelectorAll(".error"));
+  const total = spans.length;
 
   suggestionsCount.textContent = String(total);
+
+  if (total === 0) {
+    qsSerious.textContent = "0";
+    qsSmall.textContent = "0";
+    qsImprove.textContent = "0";
+    qualityWrap.hidden = true;
+    return;
+  }
+
+  let serious = 0;
+  let small = 0;
+  let improve = 0;
+
+  for (const s of spans) {
+    const k = s.dataset.badge || "error";
+    if (k === "serious") serious++;
+    else if (k === "improve") improve++;
+    else small++;
+  }
+
+  qsSerious.textContent = String(serious);
+  qsSmall.textContent   = String(small);
+  qsImprove.textContent = String(improve);
+  qualityWrap.hidden = false;
 }
+
 
   
     const errorEl = document.getElementById("length-error");
@@ -1827,21 +1775,19 @@ function persistHighlightedState() {
 
 
 function resetAllCorrectionNumbersToZero() {
-  // Sidebar list + empty text
   if (suggestionsList) suggestionsList.innerHTML = "";
-  setSidebarEmpty("Ingen feil igjen 🎉");
+  setSidebarEmpty("Inga fel kvar 🎉");
 
-  // Tekstkvalitet counts -> 0 (and keep panel visible if you want to show zeros)
   if (qsSerious) qsSerious.textContent = "0";
   if (qsSmall)   qsSmall.textContent = "0";
   if (qsImprove) qsImprove.textContent = "0";
 
-  // Show the panel with zeros (optional)
-  if (qualityWrap) qualityWrap.hidden = false;
-
-  // Total suggestions -> 0
   if (suggestionsCount) suggestionsCount.textContent = "0";
+
+  // Hide quality panel when there are no highlights
+  if (qualityWrap) qualityWrap.hidden = true;
 }
+
 
 function maybeResetNumbersIfNoHighlightsLeft() {
   const remainingHighlights = editor?.querySelectorAll(".error").length || 0;
@@ -2140,10 +2086,9 @@ window.__tcApplyLockToUI = applyLockToUI;
 
     // ✅ Random-looking but stable badge per error (doesn't change each click)
 const BADGES = [
-  { key: "serious", text: "Alvorlig feil" },
-  { key: "error",   text: "Feil" },
-  { key: "improve", text: "Forbedring" }, // this one is fine in Norwegian
-
+  { key: "serious", text: "Allvarligt fel" },
+  { key: "error",   text: "Fel" },
+  { key: "improve", text: "Förbättring" },
 ];
 
 function stableHash(str) {
@@ -2200,7 +2145,7 @@ function pickBadge(original, suggestion, id) {
     }
   
     function updateSidebarCount() {
-  syncTotalSuggestionsFromQuality();
+  updateSidebarNumbersFromDOM();
 }
 
   
@@ -2261,6 +2206,9 @@ function renderSuggestions(diffs) {
       ${isLocked ? actionsLockedHTML : actionsOpenHTML}
     </li>
   `).join("");
+
+
+  updateSidebarNumbersFromDOM();
 
   // Keep blur state consistent
   applyLockToUI();
@@ -2783,12 +2731,13 @@ delete editor.dataset.rendering;
         renderSuggestions(diffs);
 
                 // ✅ NEW: Show random "Tekstkvalitet" based on length of the text
-                if (diffs.length) {
-          showQualitySummaryForText(data.original_text);
-          syncTotalSuggestionsFromQuality();
-        } else {
-          resetAllCorrectionNumbersToZero();
-        }
+// ✅ Make all sidebar numbers match the actual highlights shown
+      showQualitySummaryFromDiffs(diffs);
+
+      if (!diffs.length) {
+        resetAllCorrectionNumbersToZero();
+      }
+
 
 
         persistHighlightedState();

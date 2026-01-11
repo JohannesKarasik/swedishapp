@@ -324,7 +324,7 @@
      
    
       <div class="auth-actions">
-        <button class="btn btn--primary" type="submit">Opprett konto</button>
+        <button class="btn btn--primary" type="submit">Skapa konto</button>
         <button type="button" class="auth-link" id="open-login">
           Jag har redan ett konto
         </button>
@@ -1929,14 +1929,15 @@ function applyLockToUI() {
   const mode = getLockMode(); // auth/pay/null
 
   const noteText =
-    mode === "auth"
-      ? "Opprett konto for å låse opp forslaget"
-      : "Start gratis prøve for å låse opp forslaget";
+  mode === "auth"
+    ? "Skapa konto för att låsa upp förslaget"
+    : "Starta gratis provperiod för att låsa upp förslaget";
 
   const lockedBtnText =
     mode === "auth"
-      ? "Opprett konto for å se rettelser"
-      : "Start gratis prøve for å se korreksjoner";
+      ? "Skapa konto för att se rättelser"
+      : "Starta gratis provperiod för att se korrigeringar";
+
 
   const lockedBtnAttr =
     mode === "auth" ? "data-unlock-auth" : "data-unlock-pay";
@@ -2155,7 +2156,7 @@ function renderSuggestions(diffs) {
 
   if (!diffs.length) {
     suggestionsList.innerHTML = "";
-    setSidebarEmpty("Ingen feil funnet 🎉");
+    setSidebarEmpty("Inga fel hittades 🎉");
     if (suggestionsCount) suggestionsCount.textContent = "0";
     return;
   }
@@ -2169,9 +2170,9 @@ function renderSuggestions(diffs) {
 
   // ✅ NEW: button label when blurred/locked
   const lockedBtnText =
-    lockMode === "auth"
-      ? "Opprett konto for å se rettelser"
-      : "Start gratis prøve for å se korreksjoner";
+  lockMode === "auth"
+    ? "Skapa konto för att se rättelser"
+    : "Starta gratis provperiod för att se korrigeringar";
 
   const lockedBtnAttr =
     lockMode === "auth" ? "data-unlock-auth" : "data-unlock-pay";
@@ -2193,7 +2194,7 @@ function renderSuggestions(diffs) {
 
   suggestionsList.innerHTML = diffs.map(d => `
     <li class="s-item ${isLocked ? "is-locked" : ""}" data-error-id="${escapeHTML(d.id)}">
-      <div class="s-pill s-pill--${escapeHTML(d.badgeKey || "error")}">${escapeHTML(d.badgeText || "Feil")}</div>
+      <div class="s-pill s-pill--${escapeHTML(d.badgeKey || "error")}">${escapeHTML(d.badgeText || "Fel")}</div>
 
       <button type="button" class="s-jump" data-jump>
         <div class="s-line">
@@ -2219,7 +2220,7 @@ function renderSuggestions(diffs) {
     function clearSuggestionsUI() {
   if (suggestionsList) suggestionsList.innerHTML = "";
   if (suggestionsCount) suggestionsCount.textContent = "0";
-  setSidebarEmpty('Trykk <strong>Rett tekst</strong> for å se forslag her.');
+  setSidebarEmpty('Klicka på <strong>Rätta text</strong> för att se förslag här.');
   hideQualitySummary(); // ✅ NEW
 }
 
@@ -2292,14 +2293,15 @@ function showTooltipForErrorSpan(errorSpan) {
   const badgeText = errorSpan.dataset.badgeText || "Feil";
 
   const lockMode = getLockMode();
-const ctaText =
+  const ctaText =
   lockMode === "auth"
-    ? "Opprett konto for å se rettelser"
-    : "Start gratis prøve for å se korreksjoner";
+    ? "Skapa konto för att se rättelser"
+    : "Starta gratis provperiod för att se korrigeringar";
+
 const ctaClass = lockMode === "auth" ? "unlock-auth" : "unlock-pay";
 
 tooltip.innerHTML = `
-  <div class="tc-tip" role="dialog" aria-label="Forslag">
+  <div class="tc-tip" role="dialog" aria-label="Förslag">
     <div class="tc-tip__top">
       <span class="tc-badge tc-badge--${escapeHTML(badgeKey)}">
         ${escapeHTML(badgeText)}
@@ -2901,7 +2903,7 @@ delete editor.dataset.rendering;
         )?.value;
 
         if (!csrfToken) {
-          alert("Sikkerhetstoken mangler. Last siden på nytt.");
+          alert("Säkerhetstoken saknas. Ladda om sidan.");
           return;
         }
 
@@ -2921,7 +2923,7 @@ delete editor.dataset.rendering;
         const data = await res.json();
 
         if (!data.url) {
-          throw new Error("Stripe URL mangler");
+          throw new Error("Stripe-URL saknas");
         }
 
         // 🚀 Redirect to Stripe Checkout
@@ -2929,7 +2931,7 @@ delete editor.dataset.rendering;
 
       } catch (err) {
         console.error("Stripe checkout error:", err);
-        alert("Noe gikk galt. Prøv igjen om et øyeblikk.");
+        alert("Något gick fel. Försök igen om en stund.");
       }
     });
   })();

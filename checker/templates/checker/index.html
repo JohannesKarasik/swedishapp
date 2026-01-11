@@ -1930,8 +1930,8 @@ function applyLockToUI() {
 
   const noteText =
   mode === "auth"
-    ? "Skapa konto för att låsa upp förslaget"
-    : "Starta gratis provperiod för att låsa upp förslaget";
+    ? "Skapa konto för att se rättelser"
+    : "Starta gratis provperiod för att se korrigeringar";
 
   const lockedBtnText =
     mode === "auth"
@@ -1959,8 +1959,8 @@ function applyLockToUI() {
         `;
       } else {
         actions.innerHTML = `
-          <button type="button" class="s-btn s-btn--primary" data-apply>Bruk</button>
-          <button type="button" class="s-btn" data-dismiss>Avvis</button>
+          <button type="button" class="s-btn s-btn--primary" data-apply>Använd</button>
+          <button type="button" class="s-btn" data-dismiss>Avvisa</button>
         `;
       }
     }
@@ -1985,9 +1985,9 @@ function applyLockToUI() {
       `;
     } else {
       tpActions.innerHTML = `
-        <button type="button" class="tc-tip__btn tc-tip__btn--primary apply">Bruk</button>
-        <button type="button" class="tc-tip__btn dismiss">Avvis</button>
-      `;
+      <button type="button" class="tc-tip__btn tc-tip__btn--primary apply">Använd</button>
+      <button type="button" class="tc-tip__btn dismiss">Avvisa</button>
+    `;
     }
   }
 }
@@ -2184,13 +2184,13 @@ function renderSuggestions(diffs) {
       </button>
     </div>
   `;
-
+  
   const actionsOpenHTML = `
-    <div class="s-actions">
-      <button type="button" class="s-btn s-btn--primary" data-apply>Bruk</button>
-      <button type="button" class="s-btn" data-dismiss>Avvis</button>
-    </div>
-  `;
+  <div class="s-actions">
+    <button type="button" class="s-btn s-btn--primary" data-apply>Använd</button>
+    <button type="button" class="s-btn" data-dismiss>Avvisa</button>
+  </div>
+`;
 
   suggestionsList.innerHTML = diffs.map(d => `
     <li class="s-item ${isLocked ? "is-locked" : ""}" data-error-id="${escapeHTML(d.id)}">
@@ -2290,7 +2290,7 @@ function showTooltipForErrorSpan(errorSpan) {
   const orig = errorSpan.dataset.original || "";
   const sugg = errorSpan.dataset.suggestion || "";
   const badgeKey = errorSpan.dataset.badge || "error";
-  const badgeText = errorSpan.dataset.badgeText || "Feil";
+  const badgeText = errorSpan.dataset.badgeText || "Fel";
 
   const lockMode = getLockMode();
   const ctaText =
@@ -2326,14 +2326,15 @@ tooltip.innerHTML = `
                      class="tc-tip__btn tc-tip__btn--primary ${ctaClass}">
                ${escapeHTML(ctaText)}
              </button>`
-          : `<button type="button"
-                     class="tc-tip__btn tc-tip__btn--primary apply">
-               Bruk
-             </button>
-             <button type="button"
-                     class="tc-tip__btn dismiss">
-               Avvis
-             </button>`
+             : `<button type="button"
+         class="tc-tip__btn tc-tip__btn--primary apply">
+     Använd
+   </button>
+   <button type="button"
+           class="tc-tip__btn dismiss">
+     Avvisa
+   </button>`
+
       }
     </div>
   </div>

@@ -862,3 +862,172 @@ def logout_view(request):
     if request.method == "POST":
         logout(request)
     return redirect("/")
+
+
+
+
+
+import stripe
+from django.conf import settings
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+@csrf_exempt
+@require_POST
+@login_required
+def create_checkout_session(request):
+    """
+    Creates a Stripe Checkout Session for a subscription with trial.
+    Redirects user back to `/` on success.
+    User access is unlocked via webhook (source of truth).
+    """
+
+    # Safety: make sure user has an email (Stripe prefers it)
+    customer_email = request.user.email or None
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+
+            # 🔑 THIS IS CRITICAL — used by webhook
+            client_reference_id=request.user.id,
+
+            customer_email=customer_email,
+
+            line_items=[
+                {
+                    "price": settings.STRIPE_PRICE_ID,
+                    "quantity": 1,
+                }
+            ],
+
+            subscription_data={
+                "trial_period_days": 30,
+            },
+
+            success_url=request.build_absolute_uri("/?checkout=success"),
+            cancel_url=request.build_absolute_uri("/"),
+
+            # ✅ Promo/coupon box removed
+            allow_promotion_codes=False,
+        )
+
+        return JsonResponse({"url": session.url})
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": str(e)},
+            status=400
+        )
+    
+
+
+
+
+from django.contrib.auth.models import User
+from .models import Profile
+
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            settings.STRIPE_WEBHOOK_SECRET,
+        )
+    except Exception:
+        return HttpResponse(status=400)
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+
+        user_id = session.get("client_reference_id")
+        if not user_id:
+            return HttpResponse(status=200)
+
+        try:
+            user = User.objects.get(id=user_id)
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.is_paying = True
+            profile.stripe_customer_id = session.get("customer")
+            profile.stripe_subscription_id = session.get("subscription")
+            profile.save()
+
+            profile.save()
+        except User.DoesNotExist:
+            pass
+
+    return HttpResponse(status=200)
+
+
+
+@login_required
+def cancel_subscription(request):
+    profile = getattr(request.user, "profile", None)
+
+    if not profile or not profile.stripe_subscription_id:
+        messages.error(request, "Fant ikke aktivt abonnement.")
+        return redirect("settings")
+
+    try:
+        stripe.checkout.Session.expire  # noop import guard
+
+        stripe.Subscription.delete(profile.stripe_subscription_id)
+
+        profile.is_paying = False
+        profile.stripe_subscription_id = None
+        profile.save()
+
+        messages.success(request, "Abonnementet er avsluttet.")
+    except Exception as e:
+        messages.error(request, "Kunne ikke avslutte abonnementet.")
+
+    return redirect("settings")
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+@login_required
+def settings_view(request):
+    user = request.user
+    profile = getattr(user, "profile", None)
+
+    if request.method == "POST":
+        # Change password
+        current = request.POST.get("current_password")
+        new = request.POST.get("new_password")
+
+        if not user.check_password(current):
+            messages.error(request, "Nåværende passord er feil.")
+            return redirect("settings")
+
+        if not new or len(new) < 8:
+            messages.error(request, "Passordet må være minst 8 tegn.")
+            return redirect("settings")
+
+        user.set_password(new)
+        user.save()
+
+        messages.success(request, "Passordet er oppdatert.")
+        return redirect("settings")
+
+    return render(
+        request,
+        "checker/settings.html",
+        {
+            "email": user.email,
+            "is_paying": bool(profile and profile.is_paying),
+        }
+    )
+
+

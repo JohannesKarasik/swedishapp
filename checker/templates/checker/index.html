@@ -1557,6 +1557,56 @@ window.addEventListener("resize", () => {
     });
   
     const MAX_WORDS = 800;
+
+    // ===============================
+// ✅ Daily free submits (anonymous): 2/day
+// ===============================
+const DAILY_SUBMIT_LIMIT = 2;
+const DAILY_SUBMIT_KEY = "tc_daily_submits_v1";
+
+function madridTodayISO() {
+  // YYYY-MM-DD in Europe/Stockholm (same CET/CEST as Spain)
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Stockholm",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
+function getDailySubmitCount() {
+  try {
+    const raw = localStorage.getItem(DAILY_SUBMIT_KEY);
+    if (!raw) return 0;
+    const obj = JSON.parse(raw);
+    const today = madridTodayISO();
+    if (obj.date !== today) return 0;
+    return Number(obj.count || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function setDailySubmitCount(count) {
+  try {
+    localStorage.setItem(DAILY_SUBMIT_KEY, JSON.stringify({
+      date: madridTodayISO(),
+      count: Number(count || 0)
+    }));
+  } catch {}
+}
+
+function incrementDailySubmitCount() {
+  const next = getDailySubmitCount() + 1;
+  setDailySubmitCount(next);
+  return next;
+}
+
+function hasHitDailySubmitLimit() {
+  if (window.IS_AUTHENTICATED) return false; // unlimited once registered
+  return getDailySubmitCount() >= DAILY_SUBMIT_LIMIT;
+}
+
   
     function countWords(text) {
       return (text.trim().match(/\S+/g) || []).length;
@@ -2235,53 +2285,14 @@ function renderSuggestions(diffs) {
     }
 
     function gateIfNeededForApply() {
-  // ✅ Anonymous: allow FIRST apply free, gate + BLUR on SECOND apply
-  if (!window.IS_AUTHENTICATED) {
-    if (appliedCorrections < 1) return true;
-
-    persistHighlightedState();
-
-    // 🔒 lock immediately so sidebar/tooltip blurs while modal is open
-    persistHighlightedState();
-
-// ⛔ DO NOT lock yet
-    setPendingLock("auth");
-
-    // ✅ open modal
-    window.openRegisterModal();
-    return false;
-
-    registerClose?.addEventListener("click", () => {
-  closeRegisterModal();
-  window.__tcApplyPendingLock?.();
-});
-
-registerModal?.querySelector(".modal__overlay")
-  ?.addEventListener("click", () => {
-    closeRegisterModal();
-    window.__tcApplyPendingLock?.();
-  });
-
-
-  }
-
-  // ✅ Logged in but unpaid: allow FIRST apply free, gate + BLUR on SECOND apply
+  // New rule: gating happens ONLY on submit (daily limit)
   if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
-    if (appliedCorrections < 1) return true;
-
     persistHighlightedState();
-
-    sessionStorage.setItem(LOCK_KEYS.payLocked, "1");
-    applyLockToUI();
-
     window.openPaymentModal();
     return false;
   }
-
-  // ✅ Paying: no gate
   return true;
 }
-
 
 
 
@@ -2690,6 +2701,11 @@ enforceLengthLimit(lastPlainText);
   
       const text = lastPlainText.trim();
       if (!text) return;
+
+      if (!window.IS_AUTHENTICATED && hasHitDailySubmitLimit()) {
+    window.openRegisterModal();
+    return;
+  }
   
       // Hard stop on length
       const wordCount = countWords(text);
@@ -2714,11 +2730,24 @@ enforceLengthLimit(lastPlainText);
         });
   
         const data = await res.json();
+
+        if (data && data.require_register) {
+  setDailySubmitCount(DAILY_SUBMIT_LIMIT);
+  window.openRegisterModal();
+  submit.disabled = false;
+  submit.classList.remove("is-loading");
+  return;
+}
   
         const diffs = getWordDiffs(data.original_text, data.corrected_text);
   
         editor.dataset.rendering = "1";
 editor.innerHTML = buildHighlightedHTML(data.original_text, diffs);
+// ✅ Count this successful correction
+if (!window.IS_AUTHENTICATED) {
+  incrementDailySubmitCount();
+}
+
 delete editor.dataset.rendering;
 
   
@@ -2744,11 +2773,6 @@ delete editor.dataset.rendering;
 
   
         // Reset free correction counter on new result
-// Reset free correction counter ONLY for anonymous users
-if (!window.IS_AUTHENTICATED) {
-  appliedCorrections = 0;
-  sessionStorage.setItem("appliedCorrections", "0");
-}
 
   
         clearActiveStates();

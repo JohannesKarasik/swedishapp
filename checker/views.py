@@ -5,6 +5,8 @@ import os
 import re
 import difflib
 import unicodedata
+from django.utils import timezone
+from zoneinfo import ZoneInfo
 
 # --- Paste normalization (Google Docs, Word, etc.) ---
 ZERO_WIDTH_RE = re.compile(r"[\u200B\u200C\u200D\u2060\uFEFF]")  # ZWSP/ZWNJ/ZWJ/WJ/BOM
@@ -256,16 +258,32 @@ def index(request):
                 "error_count": 0,
             })
 
+        # ✅ DAILY FREE LIMIT (anonymous only): 2 submits/day
+        free_count = None
+        if not request.user.is_authenticated:
+            today = timezone.now().astimezone(ZoneInfo("Europe/Stockholm")).date().isoformat()
+
+            sess_date = request.session.get("tc_free_date")
+            if sess_date != today:
+                request.session["tc_free_date"] = today
+                request.session["tc_free_count"] = 0
+
+            free_count = int(request.session.get("tc_free_count", 0))
+
+            if free_count >= 2:
+                return JsonResponse({
+                    "require_register": True,
+                    "daily_limit": 2,
+                })
+
         # ✅ Chunk correction när texten är lång
         if len(text) > 2000:
             corrected_text = correct_with_openai_chunked(text, max_chars=1800)
         else:
             corrected_text = correct_with_openai(text)
 
-        # Normal diff (stram)
         differences = find_differences_charwise(text, corrected_text)
 
-        # ✅ Om det FINNS ändringar men 0 diffs (typiskt vid långa texter / många kommatecken)
         if not differences and corrected_text.strip() != text.strip():
             differences = find_differences_charwise(
                 text,
@@ -274,6 +292,11 @@ def index(request):
                 max_block_chars=1200,
                 max_diffs=300,
             )
+
+        # ✅ increment daily count ONLY after a successful correction response
+        if free_count is not None:
+            request.session["tc_free_count"] = free_count + 1
+            request.session.modified = True
 
         return JsonResponse({
             "original_text": text,

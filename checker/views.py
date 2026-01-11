@@ -944,66 +944,70 @@ def create_checkout_session(request):
 
 
 @csrf_exempt
-@require_POST
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
     try:
         event = stripe.Webhook.construct_event(
-            payload=payload,
-            sig_header=sig_header,
-            secret=settings.STRIPE_WEBHOOK_SECRET,
+            payload,
+            sig_header,
+            settings.STRIPE_WEBHOOK_SECRET,
         )
-    except Exception:
+    except Exception as e:
+        print("❌ Webhook error:", e)
         return HttpResponse(status=400)
 
-    event_type = event.get("type")
-    obj = event["data"]["object"]
+    print("✅ Stripe event:", event["type"])
 
-    # 1) Checkout completed (trial starts here too)
-    if event_type == "checkout.session.completed":
-        user_id = obj.get("client_reference_id")
+    # 1️⃣ Checkout finished → link customer to user
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+
+        user_id = session.get("client_reference_id")
+        customer_id = session.get("customer")
+
         if user_id:
             try:
                 user = User.objects.get(id=user_id)
                 profile, _ = Profile.objects.get_or_create(user=user)
-
-                profile.stripe_customer_id = obj.get("customer")
-                profile.stripe_subscription_id = obj.get("subscription")
-
-                # fetch subscription to read status (trialing/active)
-                sub_id = profile.stripe_subscription_id
-                if sub_id:
-                    sub = stripe.Subscription.retrieve(sub_id)
-                    _set_access_from_subscription(profile, sub)
-                else:
-                    profile.save()
-
+                profile.stripe_customer_id = customer_id
+                profile.is_paying = True
+                profile.save()
+                print("✅ Linked Stripe customer to user", user.email)
             except User.DoesNotExist:
                 pass
 
-    # 2) Subscription changes (upgrade/downgrade, cancel_at_period_end toggles, etc.)
-    elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
-        sub_id = obj.get("id")
-        customer_id = obj.get("customer")
-        if sub_id and customer_id:
-            profile = Profile.objects.filter(stripe_customer_id=customer_id).first()
-            if profile:
-                profile.stripe_subscription_id = sub_id
-                profile.save(update_fields=["stripe_subscription_id"])
-                _set_access_from_subscription(profile, obj)
+    # 2️⃣ Subscription created → store subscription ID
+    if event["type"] == "customer.subscription.created":
+        sub = event["data"]["object"]
+        customer_id = sub.get("customer")
 
-    # 3) Subscription deleted => lock access
-    elif event_type == "customer.subscription.deleted":
+        try:
+            profile = Profile.objects.get(stripe_customer_id=customer_id)
+            profile.stripe_subscription_id = sub["id"]
+            profile.is_paying = True
+            profile.save()
+            print("✅ Stored subscription", sub["id"])
+        except Profile.DoesNotExist:
+            print("❌ Subscription created but no matching customer")
+
+    # 3️⃣ Payment failed → revoke access
+    if event["type"] in ["invoice.payment_failed", "customer.subscription.deleted"]:
+        obj = event["data"]["object"]
         customer_id = obj.get("customer")
-        profile = Profile.objects.filter(stripe_customer_id=customer_id).first()
-        if profile:
+
+        try:
+            profile = Profile.objects.get(stripe_customer_id=customer_id)
             profile.is_paying = False
             profile.stripe_subscription_id = None
-            profile.save(update_fields=["is_paying", "stripe_subscription_id"])
+            profile.save()
+            print("⚠️ Subscription cancelled for", profile.user.email)
+        except Profile.DoesNotExist:
+            pass
 
     return HttpResponse(status=200)
+
 
 
 @login_required

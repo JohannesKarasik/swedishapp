@@ -2,36 +2,121 @@
 <html lang="sv">
 <head>
     <title>Kontoinställningar</title>
-    < style>
-        body { font-family: system-ui; max-width: 600px; margin: 40px auto; }
-        .box { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .green { color: green; }
-        .red { color: red; }
-        button { padding: 10px 16px; font-size: 16px; }
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 40px 16px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            max-width: 520px;
+            width: 100%;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 26px;
+        }
+
+        .box {
+            border: 1px solid #e5e7eb;
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+
+        p {
+            margin: 8px 0;
+            font-size: 15px;
+        }
+
+        .green {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .red {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .sub-id {
+            font-size: 13px;
+            color: #6b7280;
+            word-break: break-all;
+            margin-top: 4px;
+        }
+
+        button {
+            padding: 12px 18px;
+            font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+
+        .cancel-btn {
+            background: #dc2626;
+            color: white;
+            margin-top: 12px;
+        }
+
+        .cancel-btn:hover {
+            background: #b91c1c;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
+
 <body>
+    <div class="container">
 
-<h2>Kontoinställningar</h2>
+        <h2>Kontoinställningar</h2>
 
-<div class="box">
-    <p><strong>Inloggad som:</strong> {{ email }}</p>
-    <p><strong>User ID:</strong> {{ user_id }}</p>
+        <div class="box">
+            <p><strong>Inloggad som:</strong> {{ email }}</p>
+            <p><strong>User ID:</strong> {{ user_id }}</p>
 
-    {% if is_paying %}
-        <p class="green"><strong>Status:</strong> Aktiv prenumeration</p>
-        <p>Stripe subscription: {{ stripe_subscription_id }}</p>
+            {% if is_paying %}
+                <p class="green">Status: Aktiv prenumeration</p>
+                <div class="sub-id">
+                    Stripe subscription: {{ stripe_subscription_id }}
+                </div>
 
-        <form method="post" action="/cancel-subscription/">
-            {% csrf_token %}
-            <button style="background:red;color:white">Avsluta abonnemang</button>
-        </form>
-    {% else %}
-        <p class="red"><strong>Status:</strong> Ingen aktiv prenumeration</p>
-    {% endif %}
-</div>
+                <form method="post" action="/cancel-subscription/">
+                    {% csrf_token %}
+                    <button class="cancel-btn">Avsluta abonnemang</button>
+                </form>
+            {% else %}
+                <p class="red">Status: Ingen aktiv prenumeration</p>
+            {% endif %}
+        </div>
 
-<a href="/">← Tillbaka till appen</a>
+        <a class="back-link" href="/">← Tillbaka till appen</a>
 
+    </div>
 </body>
 </html>

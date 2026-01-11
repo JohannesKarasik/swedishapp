@@ -1036,34 +1036,24 @@ def cancel_subscription(request):
     return redirect("settings")
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import stripe
+from django.conf import settings
+
 @login_required
 def settings_view(request):
     user = request.user
     profile = getattr(user, "profile", None)
-
-    if request.method == "POST":
-        current = request.POST.get("current_password")
-        new = request.POST.get("new_password")
-
-        if not user.check_password(current):
-            messages.error(request, "Nåværende passord er feil.")
-            return redirect("settings")
-
-        if not new or len(new) < 8:
-            messages.error(request, "Passordet må være minst 8 tegn.")
-            return redirect("settings")
-
-        user.set_password(new)
-        user.save()
-
-        messages.success(request, "Passordet er oppdatert.")
-        return redirect("settings")
 
     return render(
         request,
         "checker/settings.html",
         {
             "email": user.email,
+            "user_id": user.id,
             "is_paying": bool(profile and profile.is_paying),
+            "stripe_subscription_id": profile.stripe_subscription_id if profile else None,
         }
     )

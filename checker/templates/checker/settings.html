@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <title>Kontoinställningar</title>
+    < style>
+        body { font-family: system-ui; max-width: 600px; margin: 40px auto; }
+        .box { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .green { color: green; }
+        .red { color: red; }
+        button { padding: 10px 16px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<h2>Kontoinställningar</h2>
+
+<div class="box">
+    <p><strong>Inloggad som:</strong> {{ email }}</p>
+    <p><strong>User ID:</strong> {{ user_id }}</p>
+
+    {% if is_paying %}
+        <p class="green"><strong>Status:</strong> Aktiv prenumeration</p>
+        <p>Stripe subscription: {{ stripe_subscription_id }}</p>
+
+        <form method="post" action="/cancel-subscription/">
+            {% csrf_token %}
+            <button style="background:red;color:white">Avsluta abonnemang</button>
+        </form>
+    {% else %}
+        <p class="red"><strong>Status:</strong> Ingen aktiv prenumeration</p>
+    {% endif %}
+</div>
+
+<a href="/">← Tillbaka till appen</a>
+
+</body>
+</html>

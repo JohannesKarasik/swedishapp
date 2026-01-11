@@ -421,7 +421,7 @@ def insert_commas_with_openai(text: str) -> str:
         )
 
         client = get_openai_client()
-        resp = client.chat.completions.create(
+        resp = get_openai_client().chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -496,7 +496,7 @@ def correct_with_openai(text: str) -> str:
 
         def call_llm(system_prompt: str, user_text: str) -> str:
             client = get_openai_client()
-            resp = client.chat.completions.create(
+            resp = get_openai_client().chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},

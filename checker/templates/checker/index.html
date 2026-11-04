@@ -1520,7 +1520,6 @@ html, body {
 <script>
   (function () {
     console.log("✅ main.js loaded");
-    document.addEventListener("click", (e) => {
       // console.log("🌍 GLOBAL CLICK:", e.target);
       // ✅ TOOLTIP CLOSE HANDLERS (CORRECT SCOPE)
 
@@ -2254,32 +2253,53 @@ function renderSuggestions(diffs) {
       item?.classList.add("is-active");
     }
 
-    function gateIfNeededForApply() {
-  // New rule: gating happens ONLY on submit (daily limit)
-  if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
+// ===============================
+// ✅ Apply limits: 2 anonymous → register, then 1 with account → payment
+// ===============================
+const FREE_APPLIES_ANON = 2;
+const FREE_APPLIES_ACCOUNT = 1;
+const APPLY_KEYS = { anon: "tc_applies_anon", account: "tc_applies_account" };
+
+function getApplies(key) {
+  return Number(sessionStorage.getItem(key) || 0);
+}
+
+function currentApplyBucket() {
+  if (window.IS_PAYING) return null;
+  return window.IS_AUTHENTICATED
+    ? { key: APPLY_KEYS.account, limit: FREE_APPLIES_ACCOUNT, open: () => window.openPaymentModal() }
+    : { key: APPLY_KEYS.anon,    limit: FREE_APPLIES_ANON,    open: () => window.openRegisterModal() };
+}
+
+function gateIfNeededForApply() {
+  const b = currentApplyBucket();
+  if (!b) return true;
+  if (getApplies(b.key) >= b.limit) {
+    hideTooltip();
+    activeError = null;
+    clearActiveStates();
     persistHighlightedState();
-    window.openPaymentModal();
+    b.open();
     return false;
   }
   return true;
+}
+function recordApplyAndMaybeGate() {
+  const b = currentApplyBucket();
+  if (!b) return;
+  const n = getApplies(b.key) + 1;
+  sessionStorage.setItem(b.key, String(n));
+  if (n >= b.limit) {
+    persistHighlightedState();
+    setTimeout(b.open, 150);
+  }
 }
 
 
 
 function gateIfNeededForHighlight() {
-  // ✅ Anonymous users can view suggestions/highlights (apply is still gated)
-  if (!window.IS_AUTHENTICATED) return true;
-
-  // Logged in but NOT paying → keep your current paywall behavior
-  if (window.IS_AUTHENTICATED && !window.IS_PAYING) {
-    persistHighlightedState();
-    window.openPaymentModal();
-    return false;
-  }
-
-  return true;
+  return true; // gating happens on apply only
 }
-
 
 
 
@@ -2491,36 +2511,29 @@ if (e.target.closest("[data-dismiss]")) {
         removeSidebarItemById(errorId);
         return;
       }
-  
+
       if (action === "apply") {
         const suggestion = span.dataset.suggestion || "";
         span.replaceWith(document.createTextNode(suggestion));
-  
-        appliedCorrections += 1;
-        sessionStorage.setItem("appliedCorrections", appliedCorrections.toString());
       } else {
         const original = span.dataset.original || "";
         span.replaceWith(document.createTextNode(original));
       }
-  
+
       lastPlainText = getPlainText();
       sessionStorage.setItem("tc_text", lastPlainText);
       updateCounts(lastPlainText);
-  
+
       removeSidebarItemById(errorId);
       clearActiveStates();
       hideTooltip();
       activeError = null;
 
-      // ✅ NEW: if last highlight is gone, reset numbers (also persists)
       maybeResetNumbersIfNoHighlightsLeft();
-
-      // Keep persisting normal state too
       persistHighlightedState();
 
-
+      if (action === "apply") recordApplyAndMaybeGate();
     }
-  
     /* -------------------------------
        APPLY / DISMISS FROM TOOLTIP
     --------------------------------*/
@@ -2571,9 +2584,6 @@ document.addEventListener("click", (e) => {
 
     const suggestion = activeError.dataset.suggestion || "";
     activeError.replaceWith(document.createTextNode(suggestion));
-
-    appliedCorrections += 1;
-    sessionStorage.setItem("appliedCorrections", appliedCorrections.toString());
   } else {
     const original = activeError.dataset.original || "";
     activeError.replaceWith(document.createTextNode(original));
@@ -2588,6 +2598,10 @@ document.addEventListener("click", (e) => {
   hideTooltip();
   activeError = null;
   clearActiveStates();
+
+  maybeResetNumbersIfNoHighlightsLeft();
+  persistHighlightedState();
+  if (applyBtn) recordApplyAndMaybeGate();
 }, true);
 
     /* -------------------------------
@@ -2626,9 +2640,7 @@ editor.focus();
       sessionStorage.setItem("tc_text", lastPlainText);
       updateCounts(lastPlainText);
   
-      // Editing resets free usage
-      appliedCorrections = 0;
-      sessionStorage.setItem("appliedCorrections", "0");
+  
       // 🔓 Reset payment gate when text changes
 sessionStorage.removeItem("tc_payment_gate_triggered");
 
@@ -2646,7 +2658,7 @@ maybeResetNumbersIfNoHighlightsLeft();
 persistHighlightedState();
 
 
-unlockSidebar();
+
 enforceLengthLimit(lastPlainText);
 
     });
